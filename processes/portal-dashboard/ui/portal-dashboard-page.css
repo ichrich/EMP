@@ -1,0 +1,123 @@
+.mockup {
+  display: grid;
+  gap: 2rem;
+}
+
+.mockup__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  border: 1px solid rgba(var(--border), 1);
+  border-radius: var(--radius-lg);
+  background: rgba(var(--card), 1);
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.mockup__title {
+  max-width: 44rem;
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  line-height: 1.05;
+}
+
+.mockup__description {
+  max-width: 44rem;
+  margin: 1rem 0 0;
+  color: rgba(var(--muted-foreground), 1);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.mockup__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 1rem;
+}
+
+.mockup__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.mockup-card__label {
+  color: rgba(var(--foreground), 1);
+  font-weight: 800;
+}
+
+.mockup-card__text {
+  margin: 1rem 0 0;
+  color: rgba(var(--muted-foreground), 1);
+  line-height: 1.5;
+}
+
+.mockup__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 0.8fr);
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.mockup-panel,
+.mockup-panel .card__content {
+  height: 100%;
+}
+
+.mockup-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: rgba(var(--muted-foreground), 1);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.mockup-panel__body {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.mockup-panel__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 5rem;
+  border: 1px dashed rgba(var(--border), 1);
+  border-radius: var(--radius-md);
+  background: rgba(var(--secondary), 0.5);
+  color: rgba(var(--muted-foreground), 1);
+  font-weight: 700;
+}
+
+.mockup-panel--large .mockup-panel__placeholder:first-child {
+  min-height: 12rem;
+}
+
+@media (max-width: 1100px) {
+  .mockup__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mockup__workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .mockup__hero {
+    flex-direction: column;
+    padding: 1.5rem;
+  }
+
+  .mockup__actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .mockup__grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,30 @@
+﻿.table-wrap {
+  width: 100%;
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.table th {
+  height: 2.5rem;
+  border-bottom: 1px solid rgba(var(--border), 1);
+  color: rgba(var(--muted-foreground), 1);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.table td {
+  height: 3.25rem;
+  border-bottom: 1px solid rgba(var(--border), 1);
+  color: rgba(var(--foreground), 1);
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}

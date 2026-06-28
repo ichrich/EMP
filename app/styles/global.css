@@ -1,0 +1,44 @@
+﻿@import "./design-tokens.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background: rgba(var(--background), 1);
+  color: rgba(var(--foreground), 1);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: rgba(var(--primary), 0.18);
+}
+
+:focus-visible {
+  outline: 2px solid rgba(var(--ring), 1);
+  outline-offset: 2px;
+}

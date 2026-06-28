@@ -1,0 +1,17 @@
+﻿.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid rgba(var(--border), 1);
+  color: rgba(var(--muted-foreground), 1);
+  padding: 1rem 1.5rem;
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 760px) {
+  .footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

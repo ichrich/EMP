@@ -1,0 +1,35 @@
+﻿.tabs {
+  display: grid;
+  gap: 1rem;
+}
+
+.tabs__list {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border: 1px solid rgba(var(--border), 1);
+  border-radius: var(--radius-md);
+  background: rgba(var(--muted), 1);
+  padding: 0.2rem;
+}
+
+.tabs__trigger {
+  min-height: 2rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: rgba(var(--muted-foreground), 1);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transition:
+    background-color 160ms var(--ease-out),
+    color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out);
+}
+
+.tabs__trigger[data-state="active"] {
+  background: rgba(var(--background), 1);
+  color: rgba(var(--foreground), 1);
+  box-shadow: var(--shadow-sm);
+}

@@ -1,0 +1,22 @@
+﻿.loader {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: rgba(var(--muted-foreground), 1);
+  font-size: 0.875rem;
+}
+
+.loader__spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(var(--border), 1);
+  border-top-color: rgba(var(--primary), 1);
+  border-radius: 999px;
+  animation: loader-spin 650ms linear infinite;
+}
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
