@@ -1,15 +1,20 @@
 "use client";
 
 import { LayoutDashboard, Settings, UserRound } from "lucide-react";
+import { setActiveView } from "@/features/portal-preferences/model/portal-slice";
+import { useAppDispatch, useAppSelector } from "@/shared/hooks/redux";
 import "./sidebar.css";
 
 const navItems = [
-  { label: "Пункт", icon: LayoutDashboard },
-  { label: "Пункт", icon: UserRound },
-  { label: "Пункт", icon: Settings }
-];
+  { id: "layout", label: "Пункт", icon: LayoutDashboard },
+  { id: "profile", label: "Профиль", icon: UserRound },
+  { id: "settings", label: "Настройки", icon: Settings }
+] as const;
 
 export function Sidebar() {
+  const dispatch = useAppDispatch();
+  const activeView = useAppSelector((state) => state.portal.activeView);
+
   return (
     <aside className="sidebar">
       <div className="sidebar__brand">
@@ -17,13 +22,15 @@ export function Sidebar() {
         <p className="sidebar__name">Заголовок</p>
       </div>
       <nav className="sidebar__nav" aria-label="Навигация">
-        {navItems.map((item, index) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
+          const active = item.id === activeView;
 
           return (
             <button
-              className={index === 0 ? "sidebar__link sidebar__link--active" : "sidebar__link"}
-              key={`${item.label}-${index}`}
+              className={active ? "sidebar__link sidebar__link--active" : "sidebar__link"}
+              key={item.id}
+              onClick={() => dispatch(setActiveView(item.id))}
               type="button"
             >
               <Icon size={17} />
