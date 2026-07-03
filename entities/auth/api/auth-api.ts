@@ -7,7 +7,7 @@ import type {
 
 export const authApi = createApi({
   reducerPath: "authApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "/api/auth" }),
+  baseQuery: fetchBaseQuery({ baseUrl: "/api/auth", credentials: "include" }),
   tagTypes: ["Auth"],
   endpoints: (builder) => ({
     getSession: builder.query<AuthResponse, void>({

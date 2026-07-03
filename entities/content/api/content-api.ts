@@ -2,12 +2,13 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type {
   ContentResponse,
   CreateTaskRequest,
+  UpdateTaskRequest,
   UpdateProfileRequest
 } from "@/entities/content/model/types";
 
 export const contentApi = createApi({
   reducerPath: "contentApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "/api" }),
+  baseQuery: fetchBaseQuery({ baseUrl: "/api", credentials: "include" }),
   tagTypes: ["Content"],
   endpoints: (builder) => ({
     getContent: builder.query<ContentResponse, void>({
@@ -22,6 +23,21 @@ export const contentApi = createApi({
       }),
       invalidatesTags: ["Content"]
     }),
+    updateTask: builder.mutation<ContentResponse, { id: number; body: UpdateTaskRequest }>({
+      query: ({ body, id }) => ({
+        url: `tasks/${id}`,
+        method: "PATCH",
+        body
+      }),
+      invalidatesTags: ["Content"]
+    }),
+    deleteTask: builder.mutation<ContentResponse, number>({
+      query: (id) => ({
+        url: `tasks/${id}`,
+        method: "DELETE"
+      }),
+      invalidatesTags: ["Content"]
+    }),
     updateProfile: builder.mutation<ContentResponse, UpdateProfileRequest>({
       query: (body) => ({
         url: "profile",
@@ -33,4 +49,10 @@ export const contentApi = createApi({
   })
 });
 
-export const { useCreateTaskMutation, useGetContentQuery, useUpdateProfileMutation } = contentApi;
+export const {
+  useCreateTaskMutation,
+  useDeleteTaskMutation,
+  useGetContentQuery,
+  useUpdateProfileMutation,
+  useUpdateTaskMutation
+} = contentApi;

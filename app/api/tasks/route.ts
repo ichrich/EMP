@@ -11,12 +11,31 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const createTaskSchema = z.object({
-  title: z.string().min(2),
-  description: z.string().min(2),
-  priority: z.enum(["Низкий", "Средний", "Высокий"]),
-  dueDate: z.string().min(1)
-});
+const createTaskSchema = z
+  .object({
+    title: z.string().min(2),
+    description: z.string().min(2),
+    priority: z
+      .enum(["low", "medium", "high", "Низкий", "Средний", "Высокий"])
+      .transform((value) => {
+        const map = {
+          low: "Низкий",
+          medium: "Средний",
+          high: "Высокий",
+          Низкий: "Низкий",
+          Средний: "Средний",
+          Высокий: "Высокий"
+        } as const;
+
+        return map[value];
+      }),
+    startDate: z.string().date(),
+    dueDate: z.string().date()
+  })
+  .refine((payload) => payload.dueDate >= payload.startDate, {
+    message: "Дата завершения не может быть раньше даты начала",
+    path: ["dueDate"]
+  });
 
 export async function POST(request: Request) {
   const cookieStore = await cookies();

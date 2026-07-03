@@ -17,6 +17,7 @@ export type ContentTask = {
   description: string;
   status: "Новая" | "В работе" | "На проверке" | "Готово";
   priority: "Низкий" | "Средний" | "Высокий";
+  startDate: string;
   dueDate: string;
   owner: string;
 };
@@ -65,9 +66,19 @@ export type RegisterRequest = LoginRequest & {
 export type CreateTaskRequest = {
   title: string;
   description: string;
-  priority: ContentTask["priority"];
+  priority: ContentTask["priority"] | "low" | "medium" | "high";
+  startDate: string;
   dueDate: string;
 };
+
+export type UpdateTaskRequest = Partial<{
+  title: string;
+  description: string;
+  status: ContentTask["status"] | "new" | "in_progress" | "review" | "done";
+  priority: ContentTask["priority"] | "low" | "medium" | "high";
+  startDate: string;
+  dueDate: string;
+}>;
 
 export type UpdateProfileRequest = {
   name: string;

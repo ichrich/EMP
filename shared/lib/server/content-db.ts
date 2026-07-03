@@ -26,7 +26,7 @@ type UserRow = ContentUser & {
 
 export const sessionCookieName = "emp_session";
 
-const seedVersion = "6";
+const seedVersion = "7";
 const dbDirectory = path.join(process.cwd(), "data");
 const dbPath = process.env.DATABASE_PATH ?? path.join(dbDirectory, "portal.sqlite");
 
@@ -103,6 +103,7 @@ function migrate(database: Database.Database) {
       description TEXT NOT NULL,
       status TEXT NOT NULL,
       priority TEXT NOT NULL,
+      start_date TEXT NOT NULL DEFAULT '',
       due_date TEXT NOT NULL,
       owner TEXT NOT NULL,
       sort_order INTEGER NOT NULL
@@ -113,6 +114,12 @@ function migrate(database: Database.Database) {
 
   if (!columns.some((column) => column.name === "password_hash")) {
     database.prepare("ALTER TABLE users ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''").run();
+  }
+
+  const taskColumns = database.prepare("PRAGMA table_info(tasks)").all() as Array<{ name: string }>;
+
+  if (!taskColumns.some((column) => column.name === "start_date")) {
+    database.prepare("ALTER TABLE tasks ADD COLUMN start_date TEXT NOT NULL DEFAULT ''").run();
   }
 }
 
@@ -237,7 +244,8 @@ function seed(database: Database.Database) {
       description: "Согласовать даты и убедиться, что в команде остается покрытие задач.",
       status: "В работе",
       priority: "Высокий",
-      dueDate: "Сегодня",
+      startDate: "2026-07-05",
+      dueDate: "2026-07-05",
       owner: "Алексей Морозов"
     },
     {
@@ -245,7 +253,8 @@ function seed(database: Database.Database) {
       description: "Документ доступен в разделе документов и ожидает электронной подписи.",
       status: "Новая",
       priority: "Средний",
-      dueDate: "Завтра",
+      startDate: "2026-07-06",
+      dueDate: "2026-07-07",
       owner: "Алексей Морозов"
     },
     {
@@ -253,7 +262,8 @@ function seed(database: Database.Database) {
       description: "Добавить измеримые результаты и отправить руководителю на проверку.",
       status: "На проверке",
       priority: "Средний",
-      dueDate: "5 июля",
+      startDate: "2026-07-03",
+      dueDate: "2026-07-08",
       owner: "Алексей Морозов"
     },
     {
@@ -261,7 +271,8 @@ function seed(database: Database.Database) {
       description: "Короткий курс по обновленным правилам доступа к внутренним системам.",
       status: "Готово",
       priority: "Низкий",
-      dueDate: "Выполнено",
+      startDate: "2026-07-01",
+      dueDate: "2026-07-04",
       owner: "Алексей Морозов"
     }
   ];
@@ -298,7 +309,7 @@ function seed(database: Database.Database) {
       "INSERT INTO users (id, name, role, department, email, location, status, initials, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
     const insertTask = database.prepare(
-      "INSERT INTO tasks (title, description, status, priority, due_date, owner, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO tasks (title, description, status, priority, start_date, due_date, owner, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     );
 
     insertUser.run(
@@ -329,6 +340,7 @@ function seed(database: Database.Database) {
         task.description,
         task.status,
         task.priority,
+        task.startDate,
         task.dueDate,
         task.owner,
         index
@@ -474,6 +486,7 @@ export function createTask(payload: {
   title: string;
   description: string;
   priority: ContentTask["priority"];
+  startDate: string;
   dueDate: string;
   owner: string;
 }) {
@@ -487,9 +500,74 @@ export function createTask(payload: {
 
   database
     .prepare(
-      "INSERT INTO tasks (title, description, status, priority, due_date, owner, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO tasks (title, description, status, priority, start_date, due_date, owner, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     )
-    .run(payload.title, payload.description, "Новая", payload.priority, payload.dueDate, payload.owner, nextOrder.value);
+    .run(
+      payload.title,
+      payload.description,
+      "Новая",
+      payload.priority,
+      payload.startDate,
+      payload.dueDate,
+      payload.owner,
+      nextOrder.value
+    );
+}
+
+export function updateTask(
+  taskId: number,
+  payload: Partial<{
+    title: string;
+    description: string;
+    status: ContentTask["status"];
+    priority: ContentTask["priority"];
+    startDate: string;
+    dueDate: string;
+  }>
+) {
+  const database = getDb();
+  migrate(database);
+  seed(database);
+
+  const current = database
+    .prepare(
+      "SELECT id, title, description, status, priority, start_date as startDate, due_date as dueDate FROM tasks WHERE id = ?"
+    )
+    .get(taskId) as
+    | Pick<ContentTask, "description" | "dueDate" | "id" | "priority" | "startDate" | "status" | "title">
+    | undefined;
+
+  if (!current) {
+    return false;
+  }
+
+  database
+    .prepare(
+      `UPDATE tasks
+       SET title = ?, description = ?, status = ?, priority = ?, start_date = ?, due_date = ?
+       WHERE id = ?`
+    )
+    .run(
+      payload.title ?? current.title,
+      payload.description ?? current.description,
+      payload.status ?? current.status,
+      payload.priority ?? current.priority,
+      payload.startDate ?? current.startDate,
+      payload.dueDate ?? current.dueDate,
+      taskId
+    );
+
+  return true;
+}
+
+export function deleteTask(taskId: number) {
+  const database = getDb();
+  migrate(database);
+  seed(database);
+
+  const result = database.prepare("DELETE FROM tasks WHERE id = ?").run(taskId);
+
+  return result.changes > 0;
 }
 
 export function getContent(userId = 1): ContentResponse {
@@ -501,7 +579,13 @@ export function getContent(userId = 1): ContentResponse {
   const currentUser = (selectUserById(database, userId) ?? selectUserById(database, 1)) as ContentUser;
   const taskRows = database
     .prepare(
-      "SELECT id, title, description, status, priority, due_date as dueDate, owner FROM tasks ORDER BY sort_order"
+            `SELECT id, title, description, status, priority, start_date as startDate, due_date as dueDate, owner
+       FROM tasks
+       ORDER BY
+         CASE priority WHEN 'Высокий' THEN 0 WHEN 'Средний' THEN 1 ELSE 2 END,
+         due_date ASC,
+         start_date ASC,
+         sort_order ASC`
     )
     .all() as ContentTask[];
   const cardsStatement = database.prepare(

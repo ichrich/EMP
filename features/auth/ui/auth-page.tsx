@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useLoginMutation, useRegisterMutation } from "@/entities/auth/api/auth-api";
@@ -28,13 +27,11 @@ type AuthPageProps = {
 };
 
 export function AuthPage({ mode }: AuthPageProps) {
-  const router = useRouter();
   const [login, loginState] = useLoginMutation();
   const [registerUser, registerState] = useRegisterMutation();
   const isRegister = mode === "register";
-  const schema = isRegister ? registerSchema : loginSchema;
   const form = useForm<LoginFormValues | RegisterFormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(isRegister ? registerSchema : loginSchema),
     defaultValues: isRegister
       ? { email: "", name: "", password: "" }
       : { email: "alexey.morozov@emp.local", password: "password123" }
@@ -50,8 +47,7 @@ export function AuthPage({ mode }: AuthPageProps) {
         await login(values as LoginFormValues).unwrap();
       }
 
-      router.replace("/");
-      router.refresh();
+      window.location.assign("/");
     } catch {
       form.setError("root", {
         message: isRegister ? "Не удалось создать учетную запись" : "Неверная почта или пароль"
@@ -64,7 +60,7 @@ export function AuthPage({ mode }: AuthPageProps) {
       <section className="auth-page__shell">
         <div className="auth-page__brand">
           <div className="auth-page__logo">EMP</div>
-          <BadgeLine />
+          <div className="auth-page__badge">Enterprise Employee Portal</div>
           <h1 className="auth-page__title">{isRegister ? "Создайте учетную запись" : "Вход в портал"}</h1>
           <p className="auth-page__text">
             {isRegister
@@ -121,8 +117,4 @@ export function AuthPage({ mode }: AuthPageProps) {
 
 function FormError({ message }: { message?: string }) {
   return message ? <span className="auth-page__field-error">{message}</span> : null;
-}
-
-function BadgeLine() {
-  return <div className="auth-page__badge">Enterprise Employee Portal</div>;
 }

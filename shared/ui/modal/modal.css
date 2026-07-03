@@ -12,7 +12,7 @@
   left: 50%;
   z-index: 51;
   display: grid;
-  width: min(92vw, 34rem);
+  width: 80%;
   max-height: min(90vh, 42rem);
   overflow: auto;
   border: 1px solid rgba(var(--border), 1);
