@@ -6,18 +6,27 @@ import "./modal.css";
 
 type ModalProps = {
   children: ReactNode;
+  className?: string;
   description?: string;
+  layer?: "base" | "stacked";
   onOpenChange: (open: boolean) => void;
   open: boolean;
   title: string;
 };
 
-export function Modal({ children, description, onOpenChange, open, title }: ModalProps) {
+export function Modal({ children, className, description, layer = "base", onOpenChange, open, title }: ModalProps) {
+  const overlayClassName = layer === "stacked" ? "modal__overlay modal__overlay--stacked" : "modal__overlay";
+  const contentClassName = [
+    "modal__content",
+    layer === "stacked" ? "modal__content--stacked" : "",
+    className ?? ""
+  ].filter(Boolean).join(" ");
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="modal__overlay" />
-        <Dialog.Content className="modal__content">
+        <Dialog.Overlay className={overlayClassName} />
+        <Dialog.Content className={contentClassName}>
           <div className="modal__header">
             <Dialog.Title className="modal__title">{title}</Dialog.Title>
             {description ? (
@@ -25,7 +34,13 @@ export function Modal({ children, description, onOpenChange, open, title }: Moda
             ) : null}
           </div>
           <Dialog.Close asChild>
-            <Button className="modal__close" size="icon" variant="ghost" aria-label="Закрыть окно">
+            <Button
+              className="modal__close"
+              size="icon"
+              variant="ghost"
+              aria-label="Закрыть окно"
+              onClick={(event) => event.stopPropagation()}
+            >
               <X size={16} />
             </Button>
           </Dialog.Close>

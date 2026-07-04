@@ -1,9 +1,9 @@
-﻿.modal__overlay {
+.modal__overlay {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgba(7, 10, 18, 0.46);
-  backdrop-filter: blur(4px);
+  background: rgba(7, 10, 18, 0.5);
+  backdrop-filter: blur(8px);
 }
 
 .modal__content {
@@ -12,18 +12,40 @@
   left: 50%;
   z-index: 51;
   display: grid;
-  width: 80%;
-  max-height: min(90vh, 42rem);
+  width: min(92vw, 44rem);
+  max-height: min(90vh, 46rem);
   overflow: auto;
   border: 1px solid rgba(var(--border), 1);
-  border-radius: var(--radius-lg);
+  border-radius: 1.25rem;
   background: rgba(var(--popover), 1);
   color: rgba(var(--popover-foreground), 1);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 1.75rem 5rem rgba(15, 23, 42, 0.24);
   transform: translate(-50%, -50%) scale(1);
   transition:
     opacity 200ms var(--ease-out),
     transform 200ms var(--ease-out);
+}
+
+.modal__content:has(.calendar-board) {
+  width: min(94vw, 76rem);
+  max-height: min(92vh, 52rem);
+}
+
+.modal__overlay--stacked {
+  z-index: 60;
+  background: rgba(7, 10, 18, 0.42);
+  backdrop-filter: blur(5px);
+}
+
+.modal__content--stacked {
+  z-index: 61;
+  width: min(92vw, 38rem);
+  border-color: rgba(var(--primary), 0.28);
+  box-shadow: 0 2rem 5rem rgba(7, 10, 18, 0.36), 0 0 0 1px rgba(var(--primary), 0.1);
+}
+
+.modal__content--task-details {
+  width: min(92vw, 42rem);
 }
 
 .modal__content[data-state="closed"],
@@ -37,16 +59,21 @@
 
 .modal__header {
   display: grid;
-  gap: 0.35rem;
-  padding: 1.25rem 1.25rem 0.75rem;
+  gap: 0.45rem;
+  border-bottom: 1px solid rgba(var(--border), 1);
+  background: rgba(var(--secondary), 0.28);
+  padding: 1.35rem 4rem 1rem 1.35rem;
 }
 
 .modal__title {
   margin: 0;
-  font-size: 1rem;
+  color: rgba(var(--foreground), 1);
+  font-size: 1.15rem;
+  line-height: 1.2;
 }
 
 .modal__description {
+  max-width: 42rem;
   margin: 0;
   color: rgba(var(--muted-foreground), 1);
   font-size: 0.875rem;
@@ -54,11 +81,14 @@
 }
 
 .modal__body {
-  padding: 1rem 1.25rem 1.25rem;
+  padding: 1.25rem 1.35rem 1.35rem;
 }
 
 .modal__close {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  top: 0.85rem;
+  right: 0.85rem;
+  border-radius: 999px;
+  background: rgba(var(--background), 1);
+  box-shadow: var(--shadow-sm);
 }

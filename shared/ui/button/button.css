@@ -1,9 +1,11 @@
-﻿.button {
+.button {
   display: inline-flex;
-  min-height: 2.25rem;
+  height: 2.5rem;
+  min-width: 7.5rem;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  flex: 0 0 auto;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   padding: 0.5rem 0.875rem;
@@ -56,18 +58,22 @@
 }
 
 .button--sm {
-  min-height: 2rem;
+  height: 2.25rem;
+  min-width: 6.5rem;
   padding: 0.375rem 0.625rem;
   font-size: 0.8125rem;
 }
 
 .button--lg {
-  min-height: 2.75rem;
+  height: 2.75rem;
+  min-width: 8.5rem;
   padding: 0.625rem 1rem;
 }
 
 .button--icon {
-  width: 2.25rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
   padding: 0;
 }
 

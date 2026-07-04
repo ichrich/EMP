@@ -1,7 +1,16 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
-import { AlertTriangle, CalendarDays, CheckCircle2, Download, SlidersHorizontal, Trash2 } from "lucide-react";
+import { useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import {
+  AlertTriangle,
+  CalendarDays,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  Download,
+  SlidersHorizontal,
+  Trash2
+} from "lucide-react";
 import { useGetSessionQuery } from "@/entities/auth/api/auth-api";
 import {
   useCreateTaskMutation,
@@ -42,9 +51,44 @@ const priorityWeight: Record<ContentTask["priority"], number> = {
 };
 
 type PortalModal = "task" | "taskDetails" | "profile" | "settings" | "calendar" | null;
+type CalendarStackModal = "task" | "taskDetails" | null;
 type TaskSort = "dueDate" | "priority" | "status";
+type SelectOption<T extends string> = {
+  label: string;
+  value: T;
+};
 
 const todayIso = "2026-07-06";
+
+const taskSortOptions: SelectOption<TaskSort>[] = [
+  { label: "По сроку", value: "dueDate" },
+  { label: "По срочности", value: "priority" },
+  { label: "По статусу", value: "status" }
+];
+
+const priorityOptions: SelectOption<"low" | "medium" | "high">[] = [
+  { label: "Низкий", value: "low" },
+  { label: "Средний", value: "medium" },
+  { label: "Высокий", value: "high" }
+];
+
+const notificationOptions: SelectOption<string>[] = [
+  { label: "Все события", value: "Все события" },
+  { label: "Только важные", value: "Только важные" },
+  { label: "Отключить", value: "Отключить" }
+];
+
+const modeOptions: SelectOption<string>[] = [
+  { label: "Операционный", value: "Операционный" },
+  { label: "Фокус", value: "Фокус" },
+  { label: "Руководитель", value: "Руководитель" }
+];
+
+const densityOptions: SelectOption<string>[] = [
+  { label: "Компактная", value: "Компактная" },
+  { label: "Комфортная", value: "Комфортная" },
+  { label: "Свободная", value: "Свободная" }
+];
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("ru-RU", {
@@ -143,26 +187,153 @@ function buildTimelineDays(tasks: ContentTask[]) {
 }
 
 function buildEmployeeCard(user: ContentUser) {
-  return [
-    "EMP. Карточка сотрудника",
-    "",
-    `Имя: ${user.name}`,
-    `Роль: ${user.role}`,
-    `Отдел: ${user.department}`,
-    `Email: ${user.email}`,
-    `Локация: ${user.location}`,
-    `Статус: ${user.status}`
-  ].join("\n");
+  const safeUser = {
+    department: escapeHtml(user.department),
+    email: escapeHtml(user.email),
+    location: escapeHtml(user.location),
+    name: escapeHtml(user.name),
+    role: escapeHtml(user.role),
+    status: escapeHtml(user.status)
+  };
+
+  return `<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EMP - карточка сотрудника</title>
+    <style>
+      body { margin: 0; background: rgb(244, 247, 251); color: rgb(15, 23, 42); font-family: Inter, Arial, sans-serif; }
+      .page { min-height: 100vh; display: grid; place-items: center; padding: 48px 20px; }
+      .card { width: min(720px, 100%); overflow: hidden; border: 1px solid rgba(148, 163, 184, .32); border-radius: 24px; background: rgb(255, 255, 255); box-shadow: 0 24px 70px rgba(15, 23, 42, .12); }
+      .hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 32px; background: linear-gradient(135deg, rgb(22, 78, 99), rgb(15, 118, 110)); color: white; }
+      .logo { display: grid; width: 64px; height: 64px; place-items: center; border-radius: 18px; background: rgba(255, 255, 255, .14); font-weight: 900; letter-spacing: .04em; }
+      h1 { margin: 0; font-size: 30px; line-height: 1.1; }
+      .role { margin: 8px 0 0; opacity: .84; font-weight: 700; }
+      .body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 28px 32px 32px; }
+      .item { display: grid; gap: 8px; border: 1px solid rgba(148, 163, 184, .28); border-radius: 16px; padding: 18px; background: rgb(248, 250, 252); }
+      .label { color: rgb(100, 116, 139); font-size: 12px; font-weight: 900; text-transform: uppercase; }
+      .value { font-size: 16px; font-weight: 800; }
+      .footer { display: flex; justify-content: space-between; gap: 16px; border-top: 1px solid rgba(148, 163, 184, .24); padding: 18px 32px; color: rgb(100, 116, 139); font-size: 13px; font-weight: 700; }
+      @media print { body { background: white; } .page { padding: 0; } .card { box-shadow: none; } }
+      @media (max-width: 640px) { .hero, .footer { flex-direction: column; align-items: flex-start; } .body { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="card">
+        <div class="hero">
+          <div>
+            <h1>${safeUser.name}</h1>
+            <p class="role">${safeUser.role}</p>
+          </div>
+          <div class="logo">EMP</div>
+        </div>
+        <div class="body">
+          <div class="item"><span class="label">Отдел</span><span class="value">${safeUser.department}</span></div>
+          <div class="item"><span class="label">Email</span><span class="value">${safeUser.email}</span></div>
+          <div class="item"><span class="label">Локация</span><span class="value">${safeUser.location}</span></div>
+          <div class="item"><span class="label">Статус</span><span class="value">${safeUser.status}</span></div>
+        </div>
+        <footer class="footer"><span>Enterprise Employee Portal</span><span>Сформировано локально</span></footer>
+      </section>
+    </main>
+  </body>
+</html>`;
 }
 
-function downloadTextFile(fileName: string, content: string) {
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function downloadFile(fileName: string, content: string, type = "text/plain;charset=utf-8") {
+  const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = fileName;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function SelectMenu<T extends string>({
+  className = "",
+  icon,
+  name,
+  onChange,
+  options,
+  value
+}: {
+  className?: string;
+  icon?: ReactNode;
+  name?: string;
+  onChange: (value: T) => void;
+  options: SelectOption<T>[];
+  value: T;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedOption = options.find((option) => option.value === value) ?? options[0];
+
+  return (
+    <div
+      className={["select-menu", open ? "select-menu--open" : "", className].filter(Boolean).join(" ")}
+      onBlur={(event) => {
+        const nextTarget = event.relatedTarget;
+
+        if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
+          setOpen(false);
+        }
+      }}
+    >
+      {name ? <input name={name} type="hidden" value={value} /> : null}
+      <button
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className="select-menu__trigger"
+        onClick={() => setOpen((current) => !current)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setOpen(false);
+          }
+        }}
+        type="button"
+      >
+        {icon ? <span className="select-menu__icon">{icon}</span> : null}
+        <span className="select-menu__value">{selectedOption?.label}</span>
+        <ChevronDown className="select-menu__chevron" size={16} aria-hidden="true" />
+      </button>
+      {open ? (
+        <div className="select-menu__content" role="listbox" tabIndex={-1}>
+          {options.map((option) => {
+            const selected = option.value === value;
+
+            return (
+              <button
+                aria-selected={selected}
+                className={selected ? "select-menu__option select-menu__option--active" : "select-menu__option"}
+                key={option.value}
+                onClick={() => {
+                  onChange(option.value);
+                  setOpen(false);
+                }}
+                onMouseDown={(event) => event.preventDefault()}
+                role="option"
+                type="button"
+              >
+                <span>{option.label}</span>
+                {selected ? <Check size={15} /> : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function TaskTracker({ onOpenTask, tasks }: { onOpenTask: (task: ContentTask) => void; tasks: ContentTask[] }) {
@@ -202,14 +373,13 @@ function TaskTracker({ onOpenTask, tasks }: { onOpenTask: (task: ContentTask) =>
         <div className="tracker__search">
           <Input onChange={(event) => setQuery(event.target.value)} placeholder="Поиск по задачам" value={query} />
         </div>
-        <label className="tracker__select">
-          <SlidersHorizontal size={16} />
-          <select onChange={(event) => setSort(event.target.value as TaskSort)} value={sort}>
-            <option value="dueDate">По сроку</option>
-            <option value="priority">По срочности</option>
-            <option value="status">По статусу</option>
-          </select>
-        </label>
+        <SelectMenu
+          className="tracker__select"
+          icon={<SlidersHorizontal size={16} />}
+          onChange={setSort}
+          options={taskSortOptions}
+          value={sort}
+        />
         <div className="tracker__summary">
           <CalendarDays size={16} />
           <span>{filteredTasks.length} задач</span>
@@ -492,9 +662,20 @@ function ProductPage({
   );
 }
 
-function TaskModal({ onClose, open }: { onClose: () => void; open: boolean }) {
+function TaskModal({
+  initialDate = todayIso,
+  layer = "base",
+  onClose,
+  open
+}: {
+  initialDate?: string;
+  layer?: "base" | "stacked";
+  onClose: () => void;
+  open: boolean;
+}) {
   const [createTask, createTaskState] = useCreateTaskMutation();
   const [error, setError] = useState("");
+  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -518,7 +699,9 @@ function TaskModal({ onClose, open }: { onClose: () => void; open: boolean }) {
 
   return (
     <Modal
+      className={layer === "stacked" ? "modal__content--task-create" : undefined}
       description="Укажите период выполнения: дата начала и дата завершения будут использоваться для сортировки."
+      layer={layer}
       onOpenChange={(nextOpen) => {
         if (!nextOpen) {
           onClose();
@@ -536,18 +719,14 @@ function TaskModal({ onClose, open }: { onClose: () => void; open: boolean }) {
         </Field>
         <div className="product-form__grid">
           <Field label="Дата начала">
-            <Input defaultValue={todayIso} name="startDate" required type="date" />
+            <Input defaultValue={initialDate} name="startDate" required type="date" />
           </Field>
           <Field label="Дата завершения">
-            <Input defaultValue={todayIso} name="dueDate" required type="date" />
+            <Input defaultValue={initialDate} name="dueDate" required type="date" />
           </Field>
         </div>
         <Field label="Срочность">
-          <select className="input" defaultValue="medium" name="priority">
-            <option value="low">Низкий</option>
-            <option value="medium">Средний</option>
-            <option value="high">Высокий</option>
-          </select>
+          <SelectMenu name="priority" onChange={setPriority} options={priorityOptions} value={priority} />
         </Field>
 
         {error ? <p className="product-form__error">{error}</p> : null}
@@ -562,10 +741,12 @@ function TaskModal({ onClose, open }: { onClose: () => void; open: boolean }) {
 }
 
 function TaskDetailsModal({
+  layer = "base",
   onClose,
   open,
   task
 }: {
+  layer?: "base" | "stacked";
   onClose: () => void;
   open: boolean;
   task?: ContentTask;
@@ -591,7 +772,9 @@ function TaskDetailsModal({
 
   return (
     <Modal
+      className={layer === "stacked" ? "modal__content--task-details" : undefined}
       description="Просмотрите задачу и измените ее состояние."
+      layer={layer}
       onOpenChange={(nextOpen) => {
         if (!nextOpen) {
           onClose();
@@ -742,6 +925,9 @@ function ProfileModal({ onClose, open, user }: { onClose: () => void; open: bool
 function SettingsModal({ onClose, open }: { onClose: () => void; open: boolean }) {
 
   const [saved, setSaved] = useState(false);
+  const [notifications, setNotifications] = useState("Все события");
+  const [mode, setMode] = useState("Операционный");
+  const [density, setDensity] = useState("Комфортная");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -770,25 +956,13 @@ function SettingsModal({ onClose, open }: { onClose: () => void; open: boolean }
     >
     <form className="product-form" onSubmit={handleSubmit}>
         <Field label="Уведомления">
-          <select className="input" defaultValue="Все события" name="notifications">
-            <option>Все события</option>
-            <option>Только важные</option>
-            <option>Отключить</option>
-          </select>
+          <SelectMenu name="notifications" onChange={setNotifications} options={notificationOptions} value={notifications} />
         </Field>
         <Field label="Рабочий режим">
-          <select className="input" defaultValue="Операционный" name="mode">
-            <option>Операционный</option>
-            <option>Фокус</option>
-            <option>Руководитель</option>
-          </select>
+          <SelectMenu name="mode" onChange={setMode} options={modeOptions} value={mode} />
         </Field>
-          <Field label="Плотность списка">
-          <select className="input" defaultValue="Комфортная" name="density">
-            <option>Компактная</option>
-            <option>Комфортная</option>
-            <option>Свободная</option>
-          </select>
+        <Field label="Плотность списка">
+          <SelectMenu name="density" onChange={setDensity} options={densityOptions} value={density} />
         </Field>
         {saved ? <p className="product-form__success">Настройки сохранены</p> : null}
         <div className="product-form__actions">
@@ -800,11 +974,13 @@ function SettingsModal({ onClose, open }: { onClose: () => void; open: boolean }
 }
 
 function CalendarModal({
+  onCreateTask,
   onClose,
   onOpenTask,
   open,
   tasks
 }: {
+  onCreateTask: (date: string) => void;
   onClose: () => void;
   onOpenTask: (task: ContentTask) => void;
   open: boolean;
@@ -850,9 +1026,9 @@ function CalendarModal({
                 <button
                   className="calendar-warning"
                   key={task.id}
-                  onClick={() => {
+                  onClick={(event) => {
+                    event.stopPropagation();
                     onOpenTask(task);
-                    onClose();
                   }}
                   type="button"
                 >
@@ -893,9 +1069,15 @@ function CalendarModal({
                     "calendar-day",
                     outsideMonth ? "calendar-day--muted" : "",
                     weekend ? "calendar-day--weekend" : "",
-                    day === todayIso ? "calendar-day--today" : ""
+                    day === todayIso ? "calendar-day--today" : "",
+                    dayTasks.length === 0 ? "calendar-day--empty" : ""
                   ].filter(Boolean).join(" ")}
                   key={day}
+                  onClick={() => {
+                    if (dayTasks.length === 0) {
+                      onCreateTask(day);
+                    }
+                  }}
                 >
                   <div className="calendar-day__number">
                     <span>{new Date(`${day}T00:00:00`).getDate()}</span>
@@ -908,9 +1090,9 @@ function CalendarModal({
                           task.priority === "Высокий" ? "high" : task.priority === "Средний" ? "medium" : "low"
                         }`}
                         key={task.id}
-                        onClick={() => {
+                        onClick={(event) => {
+                          event.stopPropagation();
                           onOpenTask(task);
-                          onClose();
                         }}
                         type="button"
                       >
@@ -919,6 +1101,7 @@ function CalendarModal({
                       </button>
                     ))}
                     {dayTasks.length > 3 ? <span className="calendar-day__more">+{dayTasks.length - 3}</span> : null}
+                    {dayTasks.length === 0 ? <span className="calendar-day__empty">Создать задачу</span> : null}
                   </div>
                 </div>
               );
@@ -938,20 +1121,37 @@ export function PortalDashboardPage() {
     skip: !isAuthenticated
   });
   const [modal, setModal] = useState<PortalModal>(null);
+  const [calendarStackModal, setCalendarStackModal] = useState<CalendarStackModal>(null);
   const [selectedTask, setSelectedTask] = useState<ContentTask | undefined>();
+  const [taskInitialDate, setTaskInitialDate] = useState(todayIso);
   const page = data?.pages[activeView];
   const currentUser = data?.currentUser ?? session?.user;
 
   function openTaskDetails(task: ContentTask) {
     setSelectedTask(task);
+    if (modal === "calendar") {
+      setCalendarStackModal("taskDetails");
+      return;
+    }
+
     setModal("taskDetails");
+  }
+
+  function openTaskCreate(date = todayIso) {
+    setTaskInitialDate(date);
+    if (modal === "calendar") {
+      setCalendarStackModal("task");
+      return;
+    }
+
+    setModal("task");
   }
 
   function handleAction(index: number) {
     if (activeView === "profile") {
 
       if (index === 1 && currentUser) {
-        downloadTextFile(`employee-card-${currentUser.id}.txt`, buildEmployeeCard(currentUser));
+        downloadFile(`employee-card-${currentUser.id}.html`, buildEmployeeCard(currentUser), "text/html;charset=utf-8");
         return;
       }
 
@@ -960,6 +1160,7 @@ export function PortalDashboardPage() {
     }
 
     if (index === 1) {
+      setCalendarStackModal(null);
       setModal("calendar");
       return;
     }
@@ -969,7 +1170,7 @@ export function PortalDashboardPage() {
       return;
     }
 
-    setModal("task");
+    openTaskCreate();
   }
 
   return (
@@ -981,15 +1182,36 @@ export function PortalDashboardPage() {
           <ProductPage onAction={handleAction} onOpenTask={openTaskDetails} page={page} tasks={data.tasks} user={currentUser} />
         ) : null}
       </div>
-      <TaskModal onClose={() => setModal(null)} open={modal === "task"} />
+      <TaskModal initialDate={taskInitialDate} onClose={() => setModal(null)} open={modal === "task"} />
       <TaskDetailsModal onClose={() => setModal(null)} open={modal === "taskDetails"} task={selectedTask} />
       {currentUser ? <ProfileModal onClose={() => setModal(null)} open={modal === "profile"} user={currentUser} /> : null}
       <SettingsModal onClose={() => setModal(null)} open={modal === "settings"} />
       <CalendarModal
-        onClose={() => setModal(null)}
+        onCreateTask={openTaskCreate}
+        onClose={() => {
+          if (calendarStackModal) {
+            setCalendarStackModal(null);
+            return;
+          }
+
+          setCalendarStackModal(null);
+          setModal(null);
+        }}
         onOpenTask={openTaskDetails}
         open={modal === "calendar"}
         tasks={data?.tasks ?? []}
+      />
+      <TaskModal
+        initialDate={taskInitialDate}
+        layer="stacked"
+        onClose={() => setCalendarStackModal(null)}
+        open={modal === "calendar" && calendarStackModal === "task"}
+      />
+      <TaskDetailsModal
+        layer="stacked"
+        onClose={() => setCalendarStackModal(null)}
+        open={modal === "calendar" && calendarStackModal === "taskDetails"}
+        task={selectedTask}
       />
     </PortalLayout>
   );

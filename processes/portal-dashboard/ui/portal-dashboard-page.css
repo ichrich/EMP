@@ -126,23 +126,135 @@
   min-width: 0;
 }
 
-.tracker__select {
-  display: inline-flex;
+.select-menu {
+  position: relative;
+  min-width: 12rem;
+}
+
+.select-menu__trigger {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.5rem;
+  width: 100%;
   min-height: 2.5rem;
-  border: 1px solid rgba(var(--border), 1);
+  gap: 0.55rem;
+  border: 1px solid rgba(var(--input), 1);
   border-radius: var(--radius-md);
   background: rgba(var(--background), 1);
-  padding: 0 0.75rem;
+  color: rgba(var(--foreground), 1);
+  padding: 0 0.7rem 0 0.8rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition:
+    border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.select-menu__trigger:active {
+  transform: scale(0.99);
+}
+
+.select-menu--open .select-menu__trigger,
+.select-menu__trigger:focus-visible {
+  border-color: rgba(var(--primary), 0.72);
+  box-shadow: 0 0 0 3px rgba(var(--primary), 0.14), 0 0.65rem 1.35rem rgba(15, 23, 42, 0.08);
+  outline: none;
+}
+
+.select-menu__icon,
+.select-menu__chevron {
+  display: inline-flex;
   color: rgba(var(--muted-foreground), 1);
 }
 
-.tracker__select select {
+.select-menu--open .select-menu__chevron {
+  transform: rotate(180deg);
+}
+
+.select-menu__value {
+  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: 850;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-menu__content {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  z-index: 30;
+  display: grid;
+  width: max(100%, 13.5rem);
+  overflow: hidden;
+  border: 1px solid rgba(var(--border), 1);
+  border-radius: calc(var(--radius-md) + 0.15rem);
+  background: rgba(var(--card), 1);
+  padding: 0.35rem;
+  box-shadow: 0 1.15rem 2.6rem rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.select-menu__option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1rem;
+  align-items: center;
+  min-height: 2.25rem;
+  gap: 0.75rem;
   border: 0;
+  border-radius: calc(var(--radius-md) - 0.2rem);
   background: transparent;
   color: rgba(var(--foreground), 1);
+  padding: 0 0.65rem 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 760;
+  text-align: left;
+}
+
+.select-menu__option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-menu__option svg {
+  color: rgba(var(--primary), 1);
+}
+
+.select-menu__option:hover,
+.select-menu__option:focus-visible {
+  background: rgba(var(--secondary), 0.82);
   outline: none;
+}
+
+.select-menu__option--active {
+  background: rgba(var(--primary), 0.12);
+  color: rgba(var(--foreground), 1);
+}
+
+.dark .select-menu__trigger {
+  background: rgba(15, 23, 42, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0.6rem 1.2rem rgba(0, 0, 0, 0.12);
+}
+
+.dark .select-menu__content {
+  border-color: rgba(71, 85, 105, 0.85);
+  background: rgba(15, 23, 42, 0.98);
+  box-shadow: 0 1.2rem 2.8rem rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.dark .select-menu__option:hover,
+.dark .select-menu__option:focus-visible {
+  background: rgba(51, 65, 85, 0.86);
+}
+
+.dark .select-menu__option--active {
+  background: rgba(var(--primary), 0.18);
+}
+
+.tracker__select {
+  min-width: 13rem;
 }
 
 .tracker__summary {
@@ -585,6 +697,13 @@
   gap: 1rem;
 }
 
+.product-form .field {
+  border: 1px solid rgba(var(--border), 1);
+  border-radius: var(--radius-md);
+  background: rgba(var(--secondary), 0.26);
+  padding: 0.9rem;
+}
+
 .product-form__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -727,6 +846,18 @@
   box-shadow: inset 0 0 0 2px rgba(var(--primary), 0.7);
 }
 
+.calendar-day--empty {
+  cursor: pointer;
+  transition:
+    background-color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out);
+}
+
+.calendar-day--empty:hover {
+  background: rgba(var(--primary), 0.08);
+  box-shadow: inset 0 0 0 1px rgba(var(--primary), 0.28);
+}
+
 .calendar-day__number {
   display: flex;
   align-items: center;
@@ -775,6 +906,18 @@
 }
 
 .calendar-day__more {
+  color: rgba(var(--muted-foreground), 1);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.calendar-day__empty {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px dashed rgba(var(--border), 1);
+  border-radius: 999px;
+  padding: 0.28rem 0.55rem;
   color: rgba(var(--muted-foreground), 1);
   font-size: 0.72rem;
   font-weight: 900;
