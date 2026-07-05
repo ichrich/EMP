@@ -12,3 +12,5 @@ skills-lock.json
 .agents
 .husky
 .codex
+data/*.sqlite-shm
+data/*.sqlite-wal
