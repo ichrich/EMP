@@ -177,6 +177,23 @@
   font-size: 0.875rem;
 }
 
+.product-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.product-form__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.product-form__error {
+  margin: 0;
+  color: rgba(var(--destructive), 1);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
 .mockup-profile-row {
   display: flex;
   align-items: center;

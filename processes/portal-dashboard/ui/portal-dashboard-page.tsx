@@ -1,13 +1,22 @@
 "use client";
 
-import { useGetContentQuery } from "@/entities/content/api/content-api";
+import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useGetSessionQuery } from "@/entities/auth/api/auth-api";
+import {
+  useCreateTaskMutation,
+  useGetContentQuery,
+  useUpdateProfileMutation
+} from "@/entities/content/api/content-api";
 import type { ContentPage, ContentTask, ContentUser } from "@/entities/content/model/types";
 import { useAppSelector } from "@/shared/hooks/redux";
 import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
 import { Badge, type BadgeProps } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
+import { Field, Input } from "@/shared/ui/input";
 import { Loader } from "@/shared/ui/loader";
+import { Modal } from "@/shared/ui/modal";
 import { PortalLayout } from "@/widgets/layout";
 import "./portal-dashboard-page.css";
 
@@ -23,6 +32,8 @@ const statusTone: Record<ContentTask["status"], BadgeProps["tone"]> = {
   "На проверке": "neutral",
   Готово: "success"
 };
+
+type PortalModal = "task" | "profile" | "settings" | null;
 
 function TaskList({ tasks }: { tasks: ContentTask[] }) {
   return (
@@ -68,10 +79,12 @@ function UserSummary({ user }: { user: ContentUser }) {
 }
 
 function ProductPage({
+  onPrimaryAction,
   page,
   tasks,
   user
 }: {
+  onPrimaryAction: () => void;
   page: ContentPage;
   tasks: ContentTask[];
   user: ContentUser;
@@ -87,7 +100,11 @@ function ProductPage({
         </div>
         <div className="mockup__actions">
           {page.actions.map((action, index) => (
-            <Button key={action} variant={index === 0 ? "primary" : "outline"}>
+            <Button
+              key={action}
+              onClick={index === 0 ? onPrimaryAction : undefined}
+              variant={index === 0 ? "primary" : "outline"}
+            >
               {action}
             </Button>
           ))}
@@ -110,7 +127,7 @@ function ProductPage({
           <CardContent>
             <div className="mockup-panel__header">
               <span>{primarySection?.title ?? "Задачи"}</span>
-              <Badge tone="info">{tasks.length} задачи</Badge>
+              <Badge tone="info">{tasks.length} задач</Badge>
             </div>
             <p className="mockup-panel__text">{primarySection?.text}</p>
             <TaskList tasks={tasks} />
@@ -131,19 +148,215 @@ function ProductPage({
   );
 }
 
+function TaskModal({ onClose, open }: { onClose: () => void; open: boolean }) {
+  const [createTask, createTaskState] = useCreateTaskMutation();
+  const [error, setError] = useState("");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+
+    const form = new FormData(event.currentTarget);
+
+    try {
+      await createTask({
+        title: String(form.get("title") ?? ""),
+        description: String(form.get("description") ?? ""),
+        priority: String(form.get("priority") ?? "Средний") as ContentTask["priority"],
+        dueDate: String(form.get("dueDate") ?? "")
+      }).unwrap();
+      onClose();
+    } catch {
+      setError("Войдите в систему и проверьте данные задачи");
+    }
+  }
+
+  return (
+    <Modal
+      description="Добавьте задачу в локальную SQLite-базу."
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          onClose();
+        }
+      }}
+      open={open}
+      title="Новая задача"
+    >
+      <form className="product-form" onSubmit={handleSubmit}>
+        <Field label="Название">
+          <Input name="title" placeholder="Согласовать документ" required />
+        </Field>
+        <Field label="Описание">
+          <Input name="description" placeholder="Кратко опишите задачу" required />
+        </Field>
+        <Field label="Приоритет">
+          <select className="input" defaultValue="Средний" name="priority">
+            <option>Низкий</option>
+            <option>Средний</option>
+            <option>Высокий</option>
+          </select>
+        </Field>
+        <Field label="Срок">
+          <Input name="dueDate" placeholder="Сегодня" required />
+        </Field>
+        {error ? <p className="product-form__error">{error}</p> : null}
+        <div className="product-form__actions">
+          <Button disabled={createTaskState.isLoading} type="submit">
+            Создать
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function ProfileModal({ onClose, open, user }: { onClose: () => void; open: boolean; user: ContentUser }) {
+  const [updateProfile, updateProfileState] = useUpdateProfileMutation();
+  const [error, setError] = useState("");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+
+    const form = new FormData(event.currentTarget);
+
+    try {
+      await updateProfile({
+        name: String(form.get("name") ?? ""),
+        role: String(form.get("role") ?? ""),
+        department: String(form.get("department") ?? ""),
+        location: String(form.get("location") ?? ""),
+        status: String(form.get("status") ?? "")
+      }).unwrap();
+      onClose();
+    } catch {
+      setError("Не удалось обновить профиль");
+    }
+  }
+
+  return (
+    <Modal
+      description="Изменения сохраняются в профиле текущего пользователя."
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          onClose();
+        }
+      }}
+      open={open}
+      title="Редактировать профиль"
+    >
+      <form className="product-form" onSubmit={handleSubmit}>
+        <Field label="Имя">
+          <Input defaultValue={user.name} name="name" required />
+        </Field>
+        <Field label="Роль">
+          <Input defaultValue={user.role} name="role" required />
+        </Field>
+        <Field label="Отдел">
+          <Input defaultValue={user.department} name="department" required />
+        </Field>
+        <Field label="Локация">
+          <Input defaultValue={user.location} name="location" required />
+        </Field>
+        <Field label="Статус">
+          <Input defaultValue={user.status} name="status" required />
+        </Field>
+        {error ? <p className="product-form__error">{error}</p> : null}
+        <div className="product-form__actions">
+          <Button disabled={updateProfileState.isLoading} type="submit">
+            Сохранить
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function SettingsModal({ onClose, open }: { onClose: () => void; open: boolean }) {
+  return (
+    <Modal
+      description="Настройки интерфейса и уведомлений для текущей сессии."
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          onClose();
+        }
+      }}
+      open={open}
+      title="Настройки портала"
+    >
+      <form
+        className="product-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onClose();
+        }}
+      >
+        <Field label="Уведомления">
+          <select className="input" defaultValue="Все события" name="notifications">
+            <option>Все события</option>
+            <option>Только важные</option>
+            <option>Отключить</option>
+          </select>
+        </Field>
+        <Field label="Рабочий режим">
+          <select className="input" defaultValue="Операционный" name="mode">
+            <option>Операционный</option>
+            <option>Фокус</option>
+            <option>Руководитель</option>
+          </select>
+        </Field>
+        <div className="product-form__actions">
+          <Button type="submit">Сохранить</Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 export function PortalDashboardPage() {
+  const router = useRouter();
   const activeView = useAppSelector((state) => state.portal.activeView);
-  const { data, isLoading } = useGetContentQuery();
+  const { data: session, isLoading: isSessionLoading } = useGetSessionQuery();
+  const isAuthenticated = Boolean(session?.user);
+  const { data, isLoading: isContentLoading } = useGetContentQuery(undefined, {
+    skip: !isAuthenticated
+  });
+  const [modal, setModal] = useState<PortalModal>(null);
   const page = data?.pages[activeView];
+  const currentUser = data?.currentUser ?? session?.user;
+
+  useEffect(() => {
+    if (!isSessionLoading && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [isAuthenticated, isSessionLoading, router]);
+
+  function handlePrimaryAction() {
+    if (activeView === "profile") {
+      setModal("profile");
+      return;
+    }
+
+    if (activeView === "settings") {
+      setModal("settings");
+      return;
+    }
+
+    setModal("task");
+  }
 
   return (
     <PortalLayout>
       <div className="mockup">
-        {isLoading ? <Loader label="Загрузка портала" /> : null}
-        {!isLoading && data && page ? (
-          <ProductPage page={page} tasks={data.tasks} user={data.currentUser} />
+        {isSessionLoading ? <Loader label="Проверка сессии" /> : null}
+        {!isSessionLoading && isAuthenticated && isContentLoading ? <Loader label="Загрузка портала" /> : null}
+        {!isSessionLoading && isAuthenticated && data && page && currentUser ? (
+          <ProductPage onPrimaryAction={handlePrimaryAction} page={page} tasks={data.tasks} user={currentUser} />
         ) : null}
       </div>
+      <TaskModal onClose={() => setModal(null)} open={modal === "task"} />
+      {currentUser ? <ProfileModal onClose={() => setModal(null)} open={modal === "profile"} user={currentUser} /> : null}
+      <SettingsModal onClose={() => setModal(null)} open={modal === "settings"} />
     </PortalLayout>
   );
 }

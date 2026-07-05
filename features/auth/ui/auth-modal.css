@@ -1,0 +1,26 @@
+.auth-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-form__hint {
+  border: 1px solid rgba(var(--border), 1);
+  border-radius: var(--radius-md);
+  background: rgba(var(--secondary), 0.55);
+  padding: 0.85rem 1rem;
+  color: rgba(var(--muted-foreground), 1);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.auth-form__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.auth-form__error {
+  margin: 0;
+  color: rgba(var(--destructive), 1);
+  font-size: 0.875rem;
+  font-weight: 700;
+}

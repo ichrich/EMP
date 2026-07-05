@@ -32,6 +32,8 @@ export type ContentUser = {
   initials: string;
 };
 
+export type AuthUser = ContentUser;
+
 export type ContentPage = {
   id: PortalView;
   title: string;
@@ -45,4 +47,32 @@ export type ContentResponse = {
   currentUser: ContentUser;
   pages: Record<PortalView, ContentPage>;
   tasks: ContentTask[];
+};
+
+export type AuthResponse = {
+  user: AuthUser | null;
+};
+
+export type LoginRequest = {
+  email: string;
+  password: string;
+};
+
+export type RegisterRequest = LoginRequest & {
+  name: string;
+};
+
+export type CreateTaskRequest = {
+  title: string;
+  description: string;
+  priority: ContentTask["priority"];
+  dueDate: string;
+};
+
+export type UpdateProfileRequest = {
+  name: string;
+  role: string;
+  department: string;
+  location: string;
+  status: string;
 };

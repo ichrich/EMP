@@ -11,3 +11,4 @@ pnpm-debug.log*
 skills-lock.json
 .agents
 .husky
+.codex

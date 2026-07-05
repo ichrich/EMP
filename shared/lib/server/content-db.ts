@@ -1,5 +1,6 @@
 import "server-only";
 import Database from "better-sqlite3";
+import { pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import type {
@@ -19,7 +20,13 @@ type PageRow = {
   actions: string;
 };
 
-const seedVersion = "4";
+type UserRow = ContentUser & {
+  password_hash: string;
+};
+
+export const sessionCookieName = "emp_session";
+
+const seedVersion = "6";
 const dbDirectory = path.join(process.cwd(), "data");
 const dbPath = process.env.DATABASE_PATH ?? path.join(dbDirectory, "portal.sqlite");
 
@@ -77,7 +84,17 @@ function migrate(database: Database.Database) {
       email TEXT NOT NULL,
       location TEXT NOT NULL,
       status TEXT NOT NULL,
-      initials TEXT NOT NULL
+      initials TEXT NOT NULL,
+      password_hash TEXT NOT NULL DEFAULT ''
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users(email);
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      expires_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS tasks (
@@ -91,6 +108,40 @@ function migrate(database: Database.Database) {
       sort_order INTEGER NOT NULL
     );
   `);
+
+  const columns = database.prepare("PRAGMA table_info(users)").all() as Array<{ name: string }>;
+
+  if (!columns.some((column) => column.name === "password_hash")) {
+    database.prepare("ALTER TABLE users ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''").run();
+  }
+}
+
+function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const hash = pbkdf2Sync(password, salt, 100000, 64, "sha512").toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password: string, storedHash: string) {
+  const [salt, hash] = storedHash.split(":");
+
+  if (!salt || !hash) {
+    return false;
+  }
+
+  const candidate = pbkdf2Sync(password, salt, 100000, 64, "sha512");
+  const expected = Buffer.from(hash, "hex");
+
+  return expected.length === candidate.length && timingSafeEqual(expected, candidate);
+}
+
+function toInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 }
 
 function seed(database: Database.Database) {
@@ -232,6 +283,7 @@ function seed(database: Database.Database) {
     database.prepare("DELETE FROM pages").run();
     database.prepare("DELETE FROM tasks").run();
     database.prepare("DELETE FROM users").run();
+    database.prepare("DELETE FROM sessions").run();
 
     const insertPage = database.prepare(
       "INSERT INTO pages (id, title, description, actions) VALUES (?, ?, ?, ?)"
@@ -243,7 +295,7 @@ function seed(database: Database.Database) {
       "INSERT INTO sections (page_id, title, text, variant, sort_order) VALUES (?, ?, ?, ?, ?)"
     );
     const insertUser = database.prepare(
-      "INSERT INTO users (id, name, role, department, email, location, status, initials) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO users (id, name, role, department, email, location, status, initials, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
     const insertTask = database.prepare(
       "INSERT INTO tasks (title, description, status, priority, due_date, owner, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)"
@@ -257,7 +309,8 @@ function seed(database: Database.Database) {
       user.email,
       user.location,
       user.status,
-      user.initials
+      user.initials,
+      hashPassword("password123")
     );
 
     pages.forEach((page) => {
@@ -290,22 +343,162 @@ function seed(database: Database.Database) {
   transaction();
 }
 
-export function getContent(): ContentResponse {
+function selectUserById(database: Database.Database, userId: number) {
+  return database
+    .prepare("SELECT id, name, role, department, email, location, status, initials FROM users WHERE id = ?")
+    .get(userId) as ContentUser | undefined;
+}
+
+function createSession(database: Database.Database, user: ContentUser) {
+  const token = randomBytes(32).toString("hex");
+
+  database
+    .prepare("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, datetime('now', '+7 days'))")
+    .run(token, user.id);
+
+  return { token, user };
+}
+
+export function getUserBySessionToken(token?: string) {
+  if (!token) {
+    return null;
+  }
+
+  const database = getDb();
+  migrate(database);
+  seed(database);
+
+  const session = database
+    .prepare("SELECT user_id as userId FROM sessions WHERE token = ? AND expires_at > datetime('now')")
+    .get(token) as { userId: number } | undefined;
+
+  return session ? (selectUserById(database, session.userId) ?? null) : null;
+}
+
+export function loginUser(payload: { email: string; password: string }) {
+  const database = getDb();
+  migrate(database);
+  seed(database);
+
+  const row = database.prepare("SELECT * FROM users WHERE lower(email) = lower(?)").get(payload.email) as
+    | UserRow
+    | undefined;
+
+  if (!row || !verifyPassword(payload.password, row.password_hash)) {
+    return null;
+  }
+
+  const user = selectUserById(database, row.id);
+
+  return user ? createSession(database, user) : null;
+}
+
+export function registerUser(payload: { name: string; email: string; password: string }) {
+  const database = getDb();
+  migrate(database);
+  seed(database);
+
+  const existing = database.prepare("SELECT id FROM users WHERE lower(email) = lower(?)").get(payload.email);
+
+  if (existing) {
+    return null;
+  }
+
+  const result = database
+    .prepare(
+      "INSERT INTO users (name, role, department, email, location, status, initials, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    )
+    .run(
+      payload.name,
+      "Сотрудник",
+      "Новая команда",
+      payload.email,
+      "Не указано",
+      "Активен",
+      toInitials(payload.name),
+      hashPassword(payload.password)
+    );
+
+  const user = selectUserById(database, Number(result.lastInsertRowid));
+
+  return user ? createSession(database, user) : null;
+}
+
+export function updateUserProfile(
+  token: string | undefined,
+  payload: {
+    name: string;
+    role: string;
+    department: string;
+    location: string;
+    status: string;
+  }
+) {
+  const user = getUserBySessionToken(token);
+
+  if (!user) {
+    return null;
+  }
+
+  const database = getDb();
+  migrate(database);
+
+  database
+    .prepare(
+      "UPDATE users SET name = ?, role = ?, department = ?, location = ?, status = ?, initials = ? WHERE id = ?"
+    )
+    .run(
+      payload.name,
+      payload.role,
+      payload.department,
+      payload.location,
+      payload.status,
+      toInitials(payload.name),
+      user.id
+    );
+
+  return selectUserById(database, user.id) ?? null;
+}
+
+export function logoutUser(token?: string) {
+  if (!token) {
+    return;
+  }
+
+  const database = getDb();
+  migrate(database);
+  database.prepare("DELETE FROM sessions WHERE token = ?").run(token);
+}
+
+export function createTask(payload: {
+  title: string;
+  description: string;
+  priority: ContentTask["priority"];
+  dueDate: string;
+  owner: string;
+}) {
+  const database = getDb();
+  migrate(database);
+  seed(database);
+
+  const nextOrder = database
+    .prepare("SELECT COALESCE(MAX(sort_order), -1) + 1 as value FROM tasks")
+    .get() as { value: number };
+
+  database
+    .prepare(
+      "INSERT INTO tasks (title, description, status, priority, due_date, owner, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    )
+    .run(payload.title, payload.description, "Новая", payload.priority, payload.dueDate, payload.owner, nextOrder.value);
+}
+
+export function getContent(userId = 1): ContentResponse {
   const database = getDb();
   migrate(database);
   seed(database);
 
   const pageRows = database.prepare("SELECT * FROM pages ORDER BY rowid").all() as PageRow[];
-  const currentUser = database.prepare("SELECT * FROM users WHERE id = 1").get() as {
-    id: number;
-    name: string;
-    role: string;
-    department: string;
-    email: string;
-    location: string;
-    status: string;
-    initials: string;
-  };
+  const currentUser = (selectUserById(database, userId) ?? selectUserById(database, 1)) as ContentUser;
   const taskRows = database
     .prepare(
       "SELECT id, title, description, status, priority, due_date as dueDate, owner FROM tasks ORDER BY sort_order"
