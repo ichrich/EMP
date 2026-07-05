@@ -6,17 +6,75 @@
 
 html {
   min-height: 100%;
-  scrollbar-gutter: stable;
+  scrollbar-color: rgba(var(--muted-foreground), 0.46) rgba(var(--secondary), 0.36);
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: thin;
 }
 
 body {
   min-height: 100%;
   margin: 0;
-  background: rgba(var(--background), 1);
+  background:
+    radial-gradient(circle at 28% 18%, rgba(var(--foreground), 0.055) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 74% 38%, rgba(var(--foreground), 0.035) 0 1px, transparent 1.5px),
+    linear-gradient(180deg, rgba(var(--background), 1), rgba(var(--background), 1));
+  background-size: 5.5rem 5.5rem, 7rem 7rem, auto;
   color: rgba(var(--foreground), 1);
   font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  transition:
+    background-color 420ms cubic-bezier(0.23, 1, 0.32, 1),
+    color 420ms cubic-bezier(0.23, 1, 0.32, 1),
+    filter 420ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    repeating-radial-gradient(ellipse at 52% 84%, transparent 0 2.5rem, rgba(var(--foreground), 0.045) 2.55rem 2.6rem),
+    linear-gradient(110deg, transparent 0 42%, rgba(var(--foreground), 0.045) 42.15% 42.35%, transparent 42.5% 100%);
+  content: "";
+  opacity: 0.72;
+  pointer-events: none;
+  transition:
+    opacity 420ms cubic-bezier(0.23, 1, 0.32, 1),
+    filter 420ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+* {
+  scrollbar-color: rgba(var(--muted-foreground), 0.46) rgba(var(--secondary), 0.36);
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 0.65rem;
+  height: 0.65rem;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(var(--secondary), 0.26);
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(var(--background), 0.9);
+  border-radius: 999px;
+  background: rgba(var(--muted-foreground), 0.46);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--foreground), 0.62);
+}
+
+html.theme-transitioning body {
+  filter: saturate(1.06);
+}
+
+html.theme-transitioning body::before {
+  filter: blur(2px);
+  opacity: 0.92;
 }
 
 a {
@@ -42,4 +100,14 @@ button {
 :focus-visible {
   outline: 2px solid rgba(var(--ring), 1);
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
 }

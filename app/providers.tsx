@@ -13,7 +13,7 @@ type AppProvidersProps = {
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <Provider store={store}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
         <ToastProvider swipeDirection="right">
           {children}
           <ToastViewport />

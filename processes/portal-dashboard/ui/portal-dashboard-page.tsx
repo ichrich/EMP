@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import {
@@ -88,6 +88,13 @@ const densityOptions: SelectOption<string>[] = [
   { label: "Компактная", value: "Компактная" },
   { label: "Комфортная", value: "Комфортная" },
   { label: "Свободная", value: "Свободная" }
+];
+
+const profileStatusOptions: SelectOption<string>[] = [
+  { label: "Активен", value: "Активен" },
+  { label: "В отпуске", value: "В отпуске" },
+  { label: "На больничном", value: "На больничном" },
+  { label: "Свой вариант", value: "custom" }
 ];
 
 function formatDate(value: string) {
@@ -186,7 +193,7 @@ function buildTimelineDays(tasks: ContentTask[]) {
   return Array.from({ length: total }, (_, index) => addDays(start, index));
 }
 
-function buildEmployeeCard(user: ContentUser) {
+function buildEmployeeCardPrintPage(user: ContentUser) {
   const safeUser = {
     department: escapeHtml(user.department),
     email: escapeHtml(user.email),
@@ -201,22 +208,24 @@ function buildEmployeeCard(user: ContentUser) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>EMP - карточка сотрудника</title>
+    <title>Карточка сотрудника - ${safeUser.name}</title>
     <style>
-      body { margin: 0; background: rgb(244, 247, 251); color: rgb(15, 23, 42); font-family: Inter, Arial, sans-serif; }
-      .page { min-height: 100vh; display: grid; place-items: center; padding: 48px 20px; }
-      .card { width: min(720px, 100%); overflow: hidden; border: 1px solid rgba(148, 163, 184, .32); border-radius: 24px; background: rgb(255, 255, 255); box-shadow: 0 24px 70px rgba(15, 23, 42, .12); }
-      .hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 32px; background: linear-gradient(135deg, rgb(22, 78, 99), rgb(15, 118, 110)); color: white; }
-      .logo { display: grid; width: 64px; height: 64px; place-items: center; border-radius: 18px; background: rgba(255, 255, 255, .14); font-weight: 900; letter-spacing: .04em; }
-      h1 { margin: 0; font-size: 30px; line-height: 1.1; }
-      .role { margin: 8px 0 0; opacity: .84; font-weight: 700; }
-      .body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 28px 32px 32px; }
-      .item { display: grid; gap: 8px; border: 1px solid rgba(148, 163, 184, .28); border-radius: 16px; padding: 18px; background: rgb(248, 250, 252); }
-      .label { color: rgb(100, 116, 139); font-size: 12px; font-weight: 900; text-transform: uppercase; }
-      .value { font-size: 16px; font-weight: 800; }
-      .footer { display: flex; justify-content: space-between; gap: 16px; border-top: 1px solid rgba(148, 163, 184, .24); padding: 18px 32px; color: rgb(100, 116, 139); font-size: 13px; font-weight: 700; }
-      @media print { body { background: white; } .page { padding: 0; } .card { box-shadow: none; } }
-      @media (max-width: 640px) { .hero, .footer { flex-direction: column; align-items: flex-start; } .body { grid-template-columns: 1fr; } }
+      @page { size: A4; margin: 18mm; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: rgb(5, 6, 7); color: rgb(248, 250, 252); font-family: Inter, Arial, sans-serif; }
+      .page { min-height: 100vh; display: grid; place-items: center; padding: 32px; background: repeating-radial-gradient(ellipse at 58% 92%, transparent 0 42px, rgba(248, 250, 252, .08) 43px 44px), linear-gradient(180deg, rgb(5, 6, 7), rgb(12, 14, 16)); }
+      .card { width: min(760px, 100%); overflow: hidden; border: 1px solid rgba(248, 250, 252, .18); border-radius: 18px; background: rgba(12, 14, 16, .96); box-shadow: 0 28px 80px rgba(0, 0, 0, .42); }
+      .hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; border-bottom: 1px solid rgba(248, 250, 252, .14); padding: 34px; }
+      .logo-slot { width: 64px; height: 64px; flex: 0 0 auto; border: 1px dashed rgba(248, 250, 252, .28); border-radius: 12px; background: rgba(248, 250, 252, .035); }
+      .eyebrow { margin: 0 0 14px; color: rgba(248, 250, 252, .58); font-size: 11px; font-weight: 800; letter-spacing: .24em; text-transform: uppercase; }
+      h1 { margin: 0; font-size: 34px; line-height: 1.05; }
+      .role { margin: 10px 0 0; color: rgba(248, 250, 252, .7); font-weight: 700; }
+      .body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 28px 34px 34px; }
+      .item { display: grid; gap: 9px; border: 1px solid rgba(248, 250, 252, .12); border-radius: 12px; padding: 18px; background: rgba(248, 250, 252, .045); }
+      .label { color: rgba(248, 250, 252, .52); font-size: 11px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+      .value { color: rgb(248, 250, 252); font-size: 16px; font-weight: 800; }
+      .footer { display: flex; justify-content: space-between; gap: 16px; border-top: 1px solid rgba(248, 250, 252, .12); padding: 18px 34px; color: rgba(248, 250, 252, .56); font-size: 12px; font-weight: 800; }
+      @media print { body { background: rgb(5, 6, 7); -webkit-print-color-adjust: exact; print-color-adjust: exact; } .page { min-height: auto; padding: 0; } .card { box-shadow: none; } }
     </style>
   </head>
   <body>
@@ -224,10 +233,11 @@ function buildEmployeeCard(user: ContentUser) {
       <section class="card">
         <div class="hero">
           <div>
+            <p class="eyebrow">Employee card</p>
             <h1>${safeUser.name}</h1>
             <p class="role">${safeUser.role}</p>
           </div>
-          <div class="logo">EMP</div>
+          <div class="logo-slot"></div>
         </div>
         <div class="body">
           <div class="item"><span class="label">Отдел</span><span class="value">${safeUser.department}</span></div>
@@ -238,10 +248,15 @@ function buildEmployeeCard(user: ContentUser) {
         <footer class="footer"><span>Enterprise Employee Portal</span><span>Сформировано локально</span></footer>
       </section>
     </main>
+    <script>
+      window.addEventListener("load", () => {
+        window.focus();
+        window.print();
+      });
+    </script>
   </body>
 </html>`;
 }
-
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -251,16 +266,17 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
-function downloadFile(fileName: string, content: string, type = "text/plain;charset=utf-8") {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  link.click();
-  URL.revokeObjectURL(url);
-}
+function printEmployeeCardPdf(user: ContentUser) {
+  const printWindow = window.open("", "_blank", "width=900,height=760");
 
+  if (!printWindow) {
+    return;
+  }
+
+  printWindow.document.open();
+  printWindow.document.write(buildEmployeeCardPrintPage(user));
+  printWindow.document.close();
+}
 function SelectMenu<T extends string>({
   className = "",
   icon,
@@ -863,6 +879,9 @@ function TaskDetailsModal({
 function ProfileModal({ onClose, open, user }: { onClose: () => void; open: boolean; user: ContentUser }) {
   const [updateProfile, updateProfileState] = useUpdateProfileMutation();
   const [error, setError] = useState("");
+  const initialStatusChoice = profileStatusOptions.some((option) => option.value === user.status) ? user.status : "custom";
+  const [statusChoice, setStatusChoice] = useState(initialStatusChoice);
+  const [customStatus, setCustomStatus] = useState(initialStatusChoice === "custom" ? user.status : "");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -909,7 +928,18 @@ function ProfileModal({ onClose, open, user }: { onClose: () => void; open: bool
           <Input defaultValue={user.location} name="location" required />
         </Field>
         <Field label="Статус">
-          <Input defaultValue={user.status} name="status" required />
+          <SelectMenu onChange={setStatusChoice} options={profileStatusOptions} value={statusChoice} />
+          {statusChoice === "custom" ? (
+            <Input
+              name="status"
+              onChange={(event) => setCustomStatus(event.target.value)}
+              placeholder="Например: На выезде"
+              required
+              value={customStatus}
+            />
+          ) : (
+            <input name="status" type="hidden" value={statusChoice} />
+          )}
         </Field>
         {error ? <p className="product-form__error">{error}</p> : null}
         <div className="product-form__actions">
@@ -1151,7 +1181,7 @@ export function PortalDashboardPage() {
     if (activeView === "profile") {
 
       if (index === 1 && currentUser) {
-        downloadFile(`employee-card-${currentUser.id}.html`, buildEmployeeCard(currentUser), "text/html;charset=utf-8");
+        printEmployeeCardPdf(currentUser);
         return;
       }
 
@@ -1179,7 +1209,9 @@ export function PortalDashboardPage() {
         {isSessionLoading ? <Loader label="Проверка сессии" /> : null}
         {!isSessionLoading && isAuthenticated && isContentLoading ? <Loader label="Загрузка портала" /> : null}
         {!isSessionLoading && isAuthenticated && data && page && currentUser ? (
-          <ProductPage onAction={handleAction} onOpenTask={openTaskDetails} page={page} tasks={data.tasks} user={currentUser} />
+          <div className="mockup__view" key={activeView}>
+            <ProductPage onAction={handleAction} onOpenTask={openTaskDetails} page={page} tasks={data.tasks} user={currentUser} />
+          </div>
         ) : null}
       </div>
       <TaskModal initialDate={taskInitialDate} onClose={() => setModal(null)} open={modal === "task"} />

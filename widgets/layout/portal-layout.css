@@ -2,7 +2,10 @@
   display: grid;
   min-height: 100dvh;
   grid-template-columns: 17rem minmax(0, 1fr);
-  background: rgba(var(--background), 1);
+  background:
+    linear-gradient(180deg, rgba(var(--background), 0.2), rgba(var(--background), 0.92)),
+    rgba(var(--background), 1);
+  transition: background-color 240ms var(--ease-out);
 }
 
 .portal-layout__main {

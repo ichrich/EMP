@@ -1,9 +1,16 @@
-﻿.card {
-  border: 1px solid rgba(var(--border), 1);
+.card {
+  border: 1px solid rgba(var(--border), 0.74);
   border-radius: var(--radius-lg);
-  background: rgba(var(--card), 1);
+  background:
+    linear-gradient(180deg, rgba(var(--card), 0.94), rgba(var(--card), 0.82)),
+    rgba(var(--card), 1);
   color: rgba(var(--card-foreground), 1);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
+  transition:
+    background-color 220ms var(--ease-out),
+    border-color 220ms var(--ease-out),
+    box-shadow 220ms var(--ease-out),
+    color 220ms var(--ease-out);
 }
 
 .card__header {
@@ -33,6 +40,6 @@
 }
 
 .card__footer {
-  border-top: 1px solid rgba(var(--border), 1);
+  border-top: 1px solid rgba(var(--border), 0.74);
   padding: 1rem 1.25rem;
 }

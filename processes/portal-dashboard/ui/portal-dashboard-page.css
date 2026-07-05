@@ -3,22 +3,44 @@
   gap: 2rem;
 }
 
+.mockup__view {
+  display: grid;
+  gap: 2rem;
+  animation: view-enter 260ms var(--ease-out) both;
+}
+
 .mockup__hero {
+  position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 2rem;
-  border: 1px solid rgba(var(--border), 1);
+  overflow: hidden;
+  border: 1px solid rgba(var(--border), 0.76);
   border-radius: var(--radius-lg);
-  background: rgba(var(--card), 1);
+  background:
+    repeating-radial-gradient(ellipse at 62% 112%, transparent 0 2rem, rgba(var(--foreground), 0.055) 2.05rem 2.1rem),
+    linear-gradient(135deg, rgba(var(--card), 0.96), rgba(var(--secondary), 0.54));
   padding: 2rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
+  animation: surface-enter 320ms var(--ease-out) 40ms both;
+}
+
+.mockup__hero::after {
+  position: absolute;
+  right: 2rem;
+  bottom: 1.25rem;
+  width: 8rem;
+  height: 1px;
+  background: rgba(var(--foreground), 0.22);
+  content: "";
 }
 
 .mockup__title {
   max-width: 44rem;
   margin: 0;
   font-size: clamp(1.75rem, 4vw, 3rem);
+  letter-spacing: 0;
   line-height: 1.05;
 }
 
@@ -42,6 +64,27 @@
   gap: 1.5rem;
 }
 
+.mockup__grid .card,
+.mockup-panel {
+  animation: surface-enter 320ms var(--ease-out) both;
+}
+
+.mockup__grid .card:nth-child(1) {
+  animation-delay: 80ms;
+}
+
+.mockup__grid .card:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.mockup__grid .card:nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.mockup__grid .card:nth-child(4) {
+  animation-delay: 200ms;
+}
+
 .mockup-card__label {
   color: rgba(var(--foreground), 1);
   font-weight: 800;
@@ -63,6 +106,14 @@
 .mockup-panel,
 .mockup-panel .card__content {
   height: 100%;
+}
+
+.mockup-panel:nth-child(1) {
+  animation-delay: 160ms;
+}
+
+.mockup-panel:nth-child(2) {
+  animation-delay: 210ms;
 }
 
 .mockup-panel__header {
@@ -704,6 +755,10 @@
   padding: 0.9rem;
 }
 
+.product-form .field:has(.select-menu + .input) {
+  gap: 0.75rem;
+}
+
 .product-form__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -945,6 +1000,39 @@
 .mockup__settings {
   display: grid;
   gap: 1.5rem;
+}
+
+@keyframes view-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes surface-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.7rem) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mockup__view,
+  .mockup__hero,
+  .mockup__grid .card,
+  .mockup-panel {
+    animation: none;
+  }
 }
 
 @media (max-width: 1100px) {

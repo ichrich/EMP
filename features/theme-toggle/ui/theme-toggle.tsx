@@ -14,13 +14,15 @@ export function ThemeToggle() {
     setMounted(true);
   }, []);
 
+  function handleToggleTheme() {
+    const root = document.documentElement;
+    root.classList.add("theme-transitioning");
+    window.setTimeout(() => root.classList.remove("theme-transitioning"), 520);
+    setTheme(isDark ? "light" : "dark");
+  }
+
   return (
-    <Button
-      aria-label="Переключить тему"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      size="icon"
-      variant="outline"
-    >
+    <Button aria-label="Переключить тему" onClick={handleToggleTheme} size="icon" variant="outline">
       {mounted && isDark ? <Sun size={16} /> : <Moon size={16} />}
     </Button>
   );
