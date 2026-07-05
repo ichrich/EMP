@@ -4,7 +4,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   serverExternalPackages: ["better-sqlite3"],
-  typedRoutes: true
+  typedRoutes: true,
+  output: "standalone",
 };
 
 export default nextConfig;
