@@ -1,7 +1,9 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
+export type PortalView = "layout" | "profile" | "settings";
+
 type PortalPreferencesState = {
-  activeView: "layout" | "profile" | "settings";
+  activeView: PortalView;
   sidebarCollapsed: boolean;
 };
 

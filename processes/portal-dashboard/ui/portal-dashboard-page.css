@@ -102,6 +102,81 @@
   min-height: 12rem;
 }
 
+.task-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.task-card {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid rgba(var(--border), 1);
+  border-radius: var(--radius-md);
+  background: rgba(var(--background), 1);
+  padding: 1rem;
+}
+
+.task-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.task-card__title {
+  margin: 0;
+  color: rgba(var(--foreground), 1);
+  font-size: 0.95rem;
+}
+
+.task-card__description {
+  margin: 0.4rem 0 0;
+  color: rgba(var(--muted-foreground), 1);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.task-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  color: rgba(var(--muted-foreground), 1);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.user-summary {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.user-summary__avatar {
+  width: 3.25rem;
+  height: 3.25rem;
+}
+
+.user-summary__name {
+  margin: 0;
+  color: rgba(var(--foreground), 1);
+  font-size: 1rem;
+}
+
+.user-summary__role {
+  margin: 0.35rem 0 0;
+  color: rgba(var(--muted-foreground), 1);
+  font-size: 0.875rem;
+}
+
+.user-summary__details {
+  display: grid;
+  gap: 0.75rem;
+  color: rgba(var(--muted-foreground), 1);
+  font-size: 0.875rem;
+}
+
 .mockup-profile-row {
   display: flex;
   align-items: center;
