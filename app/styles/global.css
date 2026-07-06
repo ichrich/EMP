@@ -11,6 +11,11 @@ html {
   scrollbar-width: thin;
 }
 
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   min-height: 100%;
   margin: 0;
@@ -44,6 +49,39 @@ body::before {
     filter 420ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
+body::after {
+  position: fixed;
+  top: var(--theme-y, 2rem);
+  left: var(--theme-x, calc(100% - 2rem));
+  z-index: 9998;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: rgba(var(--background), 0.74);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+}
+
+html.theme-transitioning body::after {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(220);
+  transition:
+    opacity 380ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 420ms cubic-bezier(0.23, 1, 0.32, 1);
+
+  @starting-style {
+    opacity: 0.22;
+    transform: translate(-50%, -50%) scale(0);
+  }
+}
+
+body[data-scroll-locked] {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+}
+
 * {
   scrollbar-color: rgba(var(--muted-foreground), 0.46) rgba(var(--secondary), 0.36);
   scrollbar-width: thin;
@@ -66,15 +104,6 @@ body::before {
 
 *::-webkit-scrollbar-thumb:hover {
   background: rgba(var(--foreground), 0.62);
-}
-
-html.theme-transitioning body {
-  filter: saturate(1.06);
-}
-
-html.theme-transitioning body::before {
-  filter: blur(2px);
-  opacity: 0.92;
 }
 
 a {

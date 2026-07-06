@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const registerSchema = z.object({
-  name: z.string().min(2),
+  name: z.string().trim().min(2),
   email: z.string().email(),
   password: z.string().min(6)
 });

@@ -96,6 +96,35 @@
   line-height: 1.5;
 }
 
+.mockup-card--action {
+  cursor: pointer;
+  transition:
+    border-color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out),
+    transform 180ms var(--ease-out);
+}
+
+.mockup-card--action:active {
+  transform: scale(0.985);
+}
+
+.mockup-card__hint {
+  display: inline-flex;
+  margin-top: 1rem;
+  color: rgba(var(--primary), 1);
+  font-size: 0.78rem;
+  font-weight: 900;
+  opacity: 0.84;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mockup-card--action:hover {
+    border-color: rgba(var(--primary), 0.34);
+    box-shadow: 0 1.1rem 2.2rem rgba(15, 23, 42, 0.1);
+    transform: translateY(-0.18rem);
+  }
+}
+
 .mockup__workspace {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 0.8fr);
@@ -179,7 +208,13 @@
 
 .select-menu {
   position: relative;
+  max-width: 100%;
   min-width: 12rem;
+}
+
+.product-form .select-menu {
+  width: 100%;
+  min-width: 0;
 }
 
 .select-menu__trigger {
@@ -208,8 +243,8 @@
 
 .select-menu--open .select-menu__trigger,
 .select-menu__trigger:focus-visible {
-  border-color: rgba(var(--primary), 0.72);
-  box-shadow: 0 0 0 3px rgba(var(--primary), 0.14), 0 0.65rem 1.35rem rgba(15, 23, 42, 0.08);
+  border-color: rgba(var(--foreground), 0.22);
+  box-shadow: 0 0 0 3px rgba(var(--foreground), 0.08), 0 0.65rem 1.35rem rgba(15, 23, 42, 0.08);
   outline: none;
 }
 
@@ -239,7 +274,9 @@
   z-index: 30;
   display: grid;
   width: max(100%, 13.5rem);
-  overflow: hidden;
+  max-height: min(18rem, 50dvh);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   border: 1px solid rgba(var(--border), 1);
   border-radius: calc(var(--radius-md) + 0.15rem);
   background: rgba(var(--card), 1);
@@ -285,8 +322,22 @@
 }
 
 .dark .select-menu__trigger {
-  background: rgba(15, 23, 42, 0.92);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0.6rem 1.2rem rgba(0, 0, 0, 0.12);
+  border-color: rgba(71, 85, 105, 0.76);
+  background: rgba(12, 14, 16, 0.94);
+  color: rgba(248, 250, 252, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0.6rem 1.2rem rgba(0, 0, 0, 0.12);
+}
+
+.dark .select-menu--open .select-menu__trigger,
+.dark .select-menu__trigger:focus-visible {
+  border-color: rgba(148, 163, 184, 0.58);
+  background: rgba(18, 21, 25, 0.98);
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.12), 0 0.65rem 1.35rem rgba(0, 0, 0, 0.22);
+}
+
+.dark .select-menu__icon,
+.dark .select-menu__chevron {
+  color: rgba(203, 213, 225, 0.72);
 }
 
 .dark .select-menu__content {
@@ -301,7 +352,7 @@
 }
 
 .dark .select-menu__option--active {
-  background: rgba(var(--primary), 0.18);
+  background: rgba(148, 163, 184, 0.14);
 }
 
 .tracker__select {
@@ -321,6 +372,21 @@
   font-size: 0.875rem;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.tracker__empty {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid rgba(var(--border), 1);
+  border-radius: var(--radius-lg);
+  background: rgba(var(--card), 0.72);
+  padding: 1.25rem;
+  color: rgba(var(--muted-foreground), 1);
+}
+
+.tracker__empty strong {
+  color: rgba(var(--foreground), 1);
+  font-size: 1rem;
 }
 
 .gantt {
@@ -558,6 +624,21 @@
 .task-modal__warnings {
   display: grid;
   gap: 0.6rem;
+}
+
+.task-modal__confirm {
+  display: grid;
+  gap: 0.3rem;
+  border: 1px solid rgba(var(--danger), 0.35);
+  border-radius: var(--radius-md);
+  background: rgba(var(--danger), 0.1);
+  padding: 0.85rem 1rem;
+  color: rgba(var(--foreground), 1);
+}
+
+.task-modal__confirm span {
+  color: rgba(var(--muted-foreground), 1);
+  font-size: 0.86rem;
 }
 
 .task-warning {
@@ -851,10 +932,19 @@
   gap: 1rem;
 }
 
+.calendar-month__title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
 .calendar-month__toolbar strong {
   color: rgba(var(--foreground), 1);
   font-size: 1rem;
   text-transform: capitalize;
+  white-space: nowrap;
 }
 
 .calendar-month__weekdays,
@@ -876,6 +966,7 @@
   border: 1px solid rgba(var(--border), 1);
   border-radius: var(--radius-lg);
   background: rgba(var(--background), 1);
+  animation: calendar-month-enter 220ms var(--ease-out) both;
 }
 
 .calendar-day {
@@ -886,6 +977,10 @@
   border-right: 1px solid rgba(var(--border), 0.75);
   border-bottom: 1px solid rgba(var(--border), 0.75);
   padding: 0.65rem;
+  transition:
+    background-color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out),
+    filter 180ms var(--ease-out);
 }
 
 .calendar-day--muted {
@@ -898,7 +993,26 @@
 }
 
 .calendar-day--today {
-  box-shadow: inset 0 0 0 2px rgba(var(--primary), 0.7);
+  background:
+    linear-gradient(180deg, rgba(var(--primary), 0.08), transparent 55%),
+    rgba(var(--background), 1);
+  box-shadow: inset 0 0 0 1px rgba(var(--primary), 0.52);
+}
+
+.calendar-day--today .calendar-day__number > span {
+  display: inline-grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(var(--primary), 1);
+  color: rgba(var(--primary-foreground), 1);
+}
+
+.calendar-day--focused-range {
+  background: rgba(var(--warning), 0.14);
+  box-shadow: inset 0 0 0 2px rgba(var(--warning), 0.72), 0 0 0 0.35rem rgba(var(--warning), 0.08);
+  animation: calendar-focus-pulse 900ms var(--ease-out) 2;
 }
 
 .calendar-day--empty {
@@ -940,6 +1054,10 @@
   font-size: 0.72rem;
   font-weight: 900;
   text-align: left;
+  transition:
+    filter 160ms var(--ease-out),
+    opacity 160ms var(--ease-out),
+    transform 160ms var(--ease-out);
 }
 
 .calendar-task span {
@@ -958,6 +1076,18 @@
 
 .calendar-task--low {
   background: rgba(125, 211, 252, 0.95);
+}
+
+.calendar-task--done {
+  background: rgba(var(--muted), 0.72);
+  color: rgba(var(--muted-foreground), 0.92);
+  filter: grayscale(0.85);
+  opacity: 0.62;
+}
+
+.calendar-task--focused {
+  transform: translateY(-1px);
+  box-shadow: 0 0.45rem 1.1rem rgba(var(--primary), 0.18);
 }
 
 .calendar-day__more {
@@ -1026,11 +1156,41 @@
   }
 }
 
+@keyframes calendar-focus-pulse {
+  0% {
+    box-shadow: inset 0 0 0 2px rgba(var(--warning), 0.76), 0 0 0 0 rgba(var(--warning), 0.2);
+  }
+
+  100% {
+    box-shadow: inset 0 0 0 2px rgba(var(--warning), 0.56), 0 0 0 0.55rem rgba(var(--warning), 0);
+  }
+}
+
+@keyframes calendar-month-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem) scale(0.992);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mockup__view,
   .mockup__hero,
   .mockup__grid .card,
   .mockup-panel {
+    animation: none;
+  }
+
+  .calendar-day--focused-range {
+    animation: none;
+  }
+
+  .calendar-month__grid {
     animation: none;
   }
 }

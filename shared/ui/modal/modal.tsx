@@ -29,17 +29,15 @@ export function Modal({ children, className, description, layer = "base", onOpen
         <Dialog.Content className={contentClassName}>
           <div className="modal__header">
             <Dialog.Title className="modal__title">{title}</Dialog.Title>
-            {description ? (
-              <Dialog.Description className="modal__description">{description}</Dialog.Description>
-            ) : null}
+            {description ? <Dialog.Description className="modal__description">{description}</Dialog.Description> : null}
           </div>
           <Dialog.Close asChild>
             <Button
+              aria-label="Закрыть окно"
               className="modal__close"
+              onClick={(event) => event.stopPropagation()}
               size="icon"
               variant="ghost"
-              aria-label="Закрыть окно"
-              onClick={(event) => event.stopPropagation()}
             >
               <X size={16} />
             </Button>

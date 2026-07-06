@@ -3,14 +3,7 @@ import Database from "better-sqlite3";
 import { pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
-import type {
-  ContentCard,
-  ContentPage,
-  ContentResponse,
-  ContentSection,
-  ContentTask,
-  ContentUser
-} from "@/entities/content/model/types";
+import type { ContentCard, ContentPage, ContentResponse, ContentSection, ContentTask, ContentUser } from "@/entities/content/model/types";
 import type { PortalView } from "@/features/portal-preferences/model/portal-slice";
 
 type PageRow = {
@@ -26,7 +19,7 @@ type UserRow = ContentUser & {
 
 export const sessionCookieName = "emp_session";
 
-const seedVersion = "7";
+const seedVersion = "9";
 const dbDirectory = path.join(process.cwd(), "data");
 const dbPath = process.env.DATABASE_PATH ?? path.join(dbDirectory, "portal.sqlite");
 
@@ -110,9 +103,9 @@ function migrate(database: Database.Database) {
     );
   `);
 
-  const columns = database.prepare("PRAGMA table_info(users)").all() as Array<{ name: string }>;
+  const userColumns = database.prepare("PRAGMA table_info(users)").all() as Array<{ name: string }>;
 
-  if (!columns.some((column) => column.name === "password_hash")) {
+  if (!userColumns.some((column) => column.name === "password_hash")) {
     database.prepare("ALTER TABLE users ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''").run();
   }
 
@@ -152,9 +145,9 @@ function toInitials(name: string) {
 }
 
 function seed(database: Database.Database) {
-  const meta = database
-    .prepare("SELECT value FROM app_meta WHERE key = ?")
-    .get("content_seed_version") as { value: string } | undefined;
+  const meta = database.prepare("SELECT value FROM app_meta WHERE key = ?").get("content_seed_version") as
+    | { value: string }
+    | undefined;
 
   if (meta?.value === seedVersion) {
     return;
@@ -164,24 +157,23 @@ function seed(database: Database.Database) {
     {
       id: "layout",
       title: "Рабочий стол сотрудника",
-      description:
-        "Краткий обзор задач, заявок и важных событий на сегодня. Экран помогает быстро понять, что требует внимания.",
+      description: "Обзор задач, сроков и рабочих событий. Экран помогает быстро понять, что требует внимания сегодня.",
       actions: ["Создать задачу", "Открыть календарь"],
       cards: [
-        { title: "Активные задачи", text: "8 задач в работе, 3 из них требуют реакции сегодня." },
-        { title: "Заявки", text: "2 заявки ожидают согласования руководителем." },
-        { title: "Документы", text: "1 документ готов к подписанию." },
-        { title: "Команда", text: "6 коллег онлайн, 2 работают удаленно." }
+        { title: "Активные задачи", text: "Задачи отсортированы по сроку, срочности и статусу." },
+        { title: "Календарь", text: "События и задачи доступны в месячном календаре." },
+        { title: "Сроки", text: "Предупреждения показывают близкие дедлайны и задачи на выходных." },
+        { title: "Команда", text: "Профиль и рабочий статус синхронизированы с порталом." }
       ],
       sections: [
         {
           title: "Приоритетные задачи",
-          text: "Список ближайших задач сотрудника с понятным статусом, сроком и приоритетом.",
+          text: "Рабочая диаграмма задач с поиском, сортировкой, сроками, статусами и карточкой действий.",
           variant: "large"
         },
         {
-          title: "Профиль пользователя",
-          text: "Короткая сводка по текущему пользователю и рабочему статусу.",
+          title: "Пользователь",
+          text: "Краткая сводка по текущему сотруднику и рабочему статусу.",
           variant: "default"
         }
       ]
@@ -189,14 +181,13 @@ function seed(database: Database.Database) {
     {
       id: "profile",
       title: "Профиль сотрудника",
-      description:
-        "Основные данные пользователя, должность, отдел, рабочая локация и контактная информация.",
+      description: "Основные данные пользователя, должность, отдел, рабочая локация и контактная информация.",
       actions: ["Редактировать", "Скачать карточку"],
       cards: [
         { title: "Должность", text: "Product Manager" },
         { title: "Отдел", text: "Продуктовая команда" },
         { title: "Локация", text: "Иркутск, гибридный формат" },
-        { title: "Статус", text: "На рабочем месте" }
+        { title: "Статус", text: "Активен" }
       ],
       sections: [
         {
@@ -214,14 +205,13 @@ function seed(database: Database.Database) {
     {
       id: "settings",
       title: "Настройки портала",
-      description:
-        "Управление уведомлениями, темой интерфейса, безопасностью и персональными предпочтениями.",
+      description: "Управление уведомлениями, режимом работы, плотностью интерфейса и локальными предпочтениями.",
       actions: ["Сохранить настройки"],
       cards: [
-        { title: "Уведомления", text: "Email и системные уведомления включены." },
-        { title: "Безопасность", text: "Двухфакторная проверка готова к подключению." },
-        { title: "Интерфейс", text: "Используется системная тема оформления." },
-        { title: "Доступ", text: "Роль пользователя: сотрудник." }
+        { title: "Уведомления", text: "Выберите, какие события должны попадать в уведомления." },
+        { title: "Безопасность", text: "Сессия контролируется серверной cookie." },
+        { title: "Интерфейс", text: "Светлая и темная темы доступны из шапки." },
+        { title: "Доступ", text: "Контент портала доступен только после входа." }
       ],
       sections: [
         {
@@ -231,7 +221,7 @@ function seed(database: Database.Database) {
         },
         {
           title: "Безопасность",
-          text: "Настройки входа, сессий и подтверждения действий.",
+          text: "Состояние входа, сессии и пользовательских действий.",
           variant: "default"
         }
       ]
@@ -245,12 +235,12 @@ function seed(database: Database.Database) {
       status: "В работе",
       priority: "Высокий",
       startDate: "2026-07-05",
-      dueDate: "2026-07-05",
+      dueDate: "2026-07-08",
       owner: "Алексей Морозов"
     },
     {
       title: "Подписать обновленный NDA",
-      description: "Документ доступен в разделе документов и ожидает электронной подписи.",
+      description: "Документ доступен в рабочем контуре и ожидает электронной подписи.",
       status: "Новая",
       priority: "Средний",
       startDate: "2026-07-06",
@@ -263,7 +253,7 @@ function seed(database: Database.Database) {
       status: "На проверке",
       priority: "Средний",
       startDate: "2026-07-03",
-      dueDate: "2026-07-08",
+      dueDate: "2026-07-10",
       owner: "Алексей Морозов"
     },
     {
@@ -284,7 +274,7 @@ function seed(database: Database.Database) {
     department: "Продуктовая команда",
     email: "alexey.morozov@emp.local",
     location: "Иркутск",
-    status: "На рабочем месте",
+    status: "Активен",
     initials: "АМ"
   };
 
@@ -296,12 +286,8 @@ function seed(database: Database.Database) {
     database.prepare("DELETE FROM users").run();
     database.prepare("DELETE FROM sessions").run();
 
-    const insertPage = database.prepare(
-      "INSERT INTO pages (id, title, description, actions) VALUES (?, ?, ?, ?)"
-    );
-    const insertCard = database.prepare(
-      "INSERT INTO cards (page_id, title, text, sort_order) VALUES (?, ?, ?, ?)"
-    );
+    const insertPage = database.prepare("INSERT INTO pages (id, title, description, actions) VALUES (?, ?, ?, ?)");
+    const insertCard = database.prepare("INSERT INTO cards (page_id, title, text, sort_order) VALUES (?, ?, ?, ?)");
     const insertSection = database.prepare(
       "INSERT INTO sections (page_id, title, text, variant, sort_order) VALUES (?, ?, ?, ?, ?)"
     );
@@ -326,30 +312,15 @@ function seed(database: Database.Database) {
 
     pages.forEach((page) => {
       insertPage.run(page.id, page.title, page.description, JSON.stringify(page.actions));
-      page.cards.forEach((card, index) => {
-        insertCard.run(page.id, card.title, card.text, index);
-      });
-      page.sections.forEach((section, index) => {
-        insertSection.run(page.id, section.title, section.text, section.variant, index);
-      });
+      page.cards.forEach((card, index) => insertCard.run(page.id, card.title, card.text, index));
+      page.sections.forEach((section, index) => insertSection.run(page.id, section.title, section.text, section.variant, index));
     });
 
     tasks.forEach((task, index) => {
-      insertTask.run(
-        task.title,
-        task.description,
-        task.status,
-        task.priority,
-        task.startDate,
-        task.dueDate,
-        task.owner,
-        index
-      );
+      insertTask.run(task.title, task.description, task.status, task.priority, task.startDate, task.dueDate, task.owner, index);
     });
 
-    database
-      .prepare("INSERT OR REPLACE INTO app_meta (key, value) VALUES (?, ?)")
-      .run("content_seed_version", seedVersion);
+    database.prepare("INSERT OR REPLACE INTO app_meta (key, value) VALUES (?, ?)").run("content_seed_version", seedVersion);
   });
 
   transaction();
@@ -364,9 +335,7 @@ function selectUserById(database: Database.Database, userId: number) {
 function createSession(database: Database.Database, user: ContentUser) {
   const token = randomBytes(32).toString("hex");
 
-  database
-    .prepare("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, datetime('now', '+7 days'))")
-    .run(token, user.id);
+  database.prepare("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, datetime('now', '+7 days'))").run(token, user.id);
 
   return { token, user };
 }
@@ -392,9 +361,7 @@ export function loginUser(payload: { email: string; password: string }) {
   migrate(database);
   seed(database);
 
-  const row = database.prepare("SELECT * FROM users WHERE lower(email) = lower(?)").get(payload.email) as
-    | UserRow
-    | undefined;
+  const row = database.prepare("SELECT * FROM users WHERE lower(email) = lower(?)").get(payload.email) as UserRow | undefined;
 
   if (!row || !verifyPassword(payload.password, row.password_hash)) {
     return null;
@@ -417,35 +384,15 @@ export function registerUser(payload: { name: string; email: string; password: s
   }
 
   const result = database
-    .prepare(
-      "INSERT INTO users (name, role, department, email, location, status, initials, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-    )
-    .run(
-      payload.name,
-      "Сотрудник",
-      "Новая команда",
-      payload.email,
-      "Не указано",
-      "Активен",
-      toInitials(payload.name),
-      hashPassword(payload.password)
-    );
+    .prepare("INSERT INTO users (name, role, department, email, location, status, initials, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+    .run(payload.name, "Сотрудник", "Новая команда", payload.email, "Не указано", "Активен", toInitials(payload.name), hashPassword(payload.password));
 
   const user = selectUserById(database, Number(result.lastInsertRowid));
 
   return user ? createSession(database, user) : null;
 }
 
-export function updateUserProfile(
-  token: string | undefined,
-  payload: {
-    name: string;
-    role: string;
-    department: string;
-    location: string;
-    status: string;
-  }
-) {
+export function updateUserProfile(token: string | undefined, payload: { name: string; role: string; department: string; location: string; status: string }) {
   const user = getUserBySessionToken(token);
 
   if (!user) {
@@ -456,18 +403,8 @@ export function updateUserProfile(
   migrate(database);
 
   database
-    .prepare(
-      "UPDATE users SET name = ?, role = ?, department = ?, location = ?, status = ?, initials = ? WHERE id = ?"
-    )
-    .run(
-      payload.name,
-      payload.role,
-      payload.department,
-      payload.location,
-      payload.status,
-      toInitials(payload.name),
-      user.id
-    );
+    .prepare("UPDATE users SET name = ?, role = ?, department = ?, location = ?, status = ?, initials = ? WHERE id = ?")
+    .run(payload.name, payload.role, payload.department, payload.location, payload.status, toInitials(payload.name), user.id);
 
   return selectUserById(database, user.id) ?? null;
 }
@@ -482,60 +419,26 @@ export function logoutUser(token?: string) {
   database.prepare("DELETE FROM sessions WHERE token = ?").run(token);
 }
 
-export function createTask(payload: {
-  title: string;
-  description: string;
-  priority: ContentTask["priority"];
-  startDate: string;
-  dueDate: string;
-  owner: string;
-}) {
+export function createTask(payload: { title: string; description: string; priority: ContentTask["priority"]; startDate: string; dueDate: string; owner: string }) {
   const database = getDb();
   migrate(database);
   seed(database);
 
-  const nextOrder = database
-    .prepare("SELECT COALESCE(MAX(sort_order), -1) + 1 as value FROM tasks")
-    .get() as { value: number };
+  const nextOrder = database.prepare("SELECT COALESCE(MAX(sort_order), -1) + 1 as value FROM tasks").get() as { value: number };
 
   database
-    .prepare(
-      "INSERT INTO tasks (title, description, status, priority, start_date, due_date, owner, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-    )
-    .run(
-      payload.title,
-      payload.description,
-      "Новая",
-      payload.priority,
-      payload.startDate,
-      payload.dueDate,
-      payload.owner,
-      nextOrder.value
-    );
+    .prepare("INSERT INTO tasks (title, description, status, priority, start_date, due_date, owner, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+    .run(payload.title, payload.description, "Новая", payload.priority, payload.startDate, payload.dueDate, payload.owner, nextOrder.value);
 }
 
-export function updateTask(
-  taskId: number,
-  payload: Partial<{
-    title: string;
-    description: string;
-    status: ContentTask["status"];
-    priority: ContentTask["priority"];
-    startDate: string;
-    dueDate: string;
-  }>
-) {
+export function updateTask(taskId: number, payload: Partial<{ title: string; description: string; status: ContentTask["status"]; priority: ContentTask["priority"]; startDate: string; dueDate: string }>) {
   const database = getDb();
   migrate(database);
   seed(database);
 
   const current = database
-    .prepare(
-      "SELECT id, title, description, status, priority, start_date as startDate, due_date as dueDate FROM tasks WHERE id = ?"
-    )
-    .get(taskId) as
-    | Pick<ContentTask, "description" | "dueDate" | "id" | "priority" | "startDate" | "status" | "title">
-    | undefined;
+    .prepare("SELECT id, title, description, status, priority, start_date as startDate, due_date as dueDate FROM tasks WHERE id = ?")
+    .get(taskId) as Pick<ContentTask, "description" | "dueDate" | "id" | "priority" | "startDate" | "status" | "title"> | undefined;
 
   if (!current) {
     return false;
@@ -579,7 +482,7 @@ export function getContent(userId = 1): ContentResponse {
   const currentUser = (selectUserById(database, userId) ?? selectUserById(database, 1)) as ContentUser;
   const taskRows = database
     .prepare(
-            `SELECT id, title, description, status, priority, start_date as startDate, due_date as dueDate, owner
+      `SELECT id, title, description, status, priority, start_date as startDate, due_date as dueDate, owner
        FROM tasks
        ORDER BY
          CASE priority WHEN 'Высокий' THEN 0 WHEN 'Средний' THEN 1 ELSE 2 END,
@@ -588,12 +491,8 @@ export function getContent(userId = 1): ContentResponse {
          sort_order ASC`
     )
     .all() as ContentTask[];
-  const cardsStatement = database.prepare(
-    "SELECT title, text FROM cards WHERE page_id = ? ORDER BY sort_order"
-  );
-  const sectionsStatement = database.prepare(
-    "SELECT title, text, variant FROM sections WHERE page_id = ? ORDER BY sort_order"
-  );
+  const cardsStatement = database.prepare("SELECT title, text FROM cards WHERE page_id = ? ORDER BY sort_order");
+  const sectionsStatement = database.prepare("SELECT title, text, variant FROM sections WHERE page_id = ? ORDER BY sort_order");
 
   const pages = pageRows.reduce(
     (acc, page) => {

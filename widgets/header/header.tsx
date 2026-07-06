@@ -68,7 +68,7 @@ export function Header() {
       </div>
       <Dialog.Root open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <Dialog.Trigger asChild>
-          <Button className="header__menu-button" size="icon" variant="outline" aria-label="Открыть меню">
+          <Button aria-label="Открыть меню" className="header__menu-button" size="icon" variant="outline">
             <Menu size={18} />
           </Button>
         </Dialog.Trigger>
@@ -84,7 +84,7 @@ export function Header() {
                 </div>
               </div>
               <Dialog.Close asChild>
-                <Button size="icon" variant="ghost" aria-label="Закрыть меню">
+                <Button aria-label="Закрыть меню" size="icon" variant="ghost">
                   <X size={18} />
                 </Button>
               </Dialog.Close>

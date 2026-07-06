@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle,
   CalendarDays,
@@ -20,7 +20,8 @@ import {
   useUpdateProfileMutation
 } from "@/entities/content/api/content-api";
 import type { ContentPage, ContentTask, ContentUser } from "@/entities/content/model/types";
-import { useAppSelector } from "@/shared/hooks/redux";
+import { setActiveView } from "@/features/portal-preferences/model/portal-slice";
+import { useAppDispatch, useAppSelector } from "@/shared/hooks/redux";
 import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
 import { Badge, type BadgeProps } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -162,7 +163,20 @@ function toDayNumber(value: string) {
 function addDays(value: string, days: number) {
   const date = new Date(`${value}T00:00:00`);
   date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
+  return toIsoDate(date);
+}
+
+function addMonths(value: string, months: number) {
+  const date = new Date(`${value}-01T00:00:00`);
+  date.setMonth(date.getMonth() + months);
+  return toIsoDate(date).slice(0, 7);
+}
+
+function toIsoDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function isWeekend(value: string) {
@@ -172,7 +186,7 @@ function isWeekend(value: string) {
 
 function buildMonthDays(monthIso: string) {
   const monthDate = new Date(`${monthIso}-01T00:00:00`);
-  const monthStart = monthDate.toISOString().slice(0, 10);
+  const monthStart = toIsoDate(monthDate);
   const firstDay = monthDate.getDay() || 7;
   const gridStart = addDays(monthStart, 1 - firstDay);
 
@@ -257,6 +271,7 @@ function buildEmployeeCardPrintPage(user: ContentUser) {
   </body>
 </html>`;
 }
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -277,6 +292,7 @@ function printEmployeeCardPdf(user: ContentUser) {
   printWindow.document.write(buildEmployeeCardPrintPage(user));
   printWindow.document.close();
 }
+
 function SelectMenu<T extends string>({
   className = "",
   icon,
@@ -402,6 +418,12 @@ function TaskTracker({ onOpenTask, tasks }: { onOpenTask: (task: ContentTask) =>
         </div>
       </div>
 
+      {filteredTasks.length === 0 ? (
+        <div className="tracker__empty">
+          <strong>Задачи не найдены</strong>
+          <span>Измените поиск или создайте новую задачу.</span>
+        </div>
+      ) : (
       <div className="gantt" style={timelineStyle}>
         <div className="gantt__tasks">
           <div className="gantt__tasks-header">
@@ -461,6 +483,7 @@ function TaskTracker({ onOpenTask, tasks }: { onOpenTask: (task: ContentTask) =>
           </div>
         </div>
       </div>
+      )}
 
     </div>
   );
@@ -634,12 +657,14 @@ function WorkspaceContent({
 
 function ProductPage({
   onAction,
+  onCardAction,
   onOpenTask,
   page,
   tasks,
   user
 }: {
   onAction: (index: number) => void;
+  onCardAction: (index: number) => void;
   onOpenTask: (task: ContentTask) => void;
   page: ContentPage;
   tasks: ContentTask[];
@@ -663,11 +688,24 @@ function ProductPage({
       </section>
 
       <section className="mockup__grid">
-        {page.cards.map((card) => (
-          <Card className="mockup-card" key={card.title}>
+        {page.cards.map((card, index) => (
+          <Card
+            className="mockup-card mockup-card--action"
+            key={card.title}
+            onClick={() => onCardAction(index)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onCardAction(index);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+          >
             <CardContent>
               <div className="mockup-card__label">{card.title}</div>
               <p className="mockup-card__text">{card.text}</p>
+              <span className="mockup-card__hint">Открыть</span>
             </CardContent>
           </Card>
         ))}
@@ -769,6 +807,7 @@ function TaskDetailsModal({
 }) {
   const [updateTask, updateTaskState] = useUpdateTaskMutation();
   const [deleteTask, deleteTaskState] = useDeleteTaskMutation();
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!task) {
     return null;
@@ -840,6 +879,13 @@ function TaskDetailsModal({
           </div>
         ) : null}
 
+        {confirmDelete ? (
+          <div className="task-modal__confirm" role="alert">
+            <strong>Удалить задачу?</strong>
+            <span>Действие нельзя отменить, задача исчезнет из списка и календаря.</span>
+          </div>
+        ) : null}
+
         <div className="task-modal__actions">
           <Button
             disabled={updateTaskState.isLoading}
@@ -863,13 +909,25 @@ function TaskDetailsModal({
           </Button>
           <Button
             disabled={deleteTaskState.isLoading}
-            onClick={() => void handleDelete()}
+            onClick={() => {
+              if (!confirmDelete) {
+                setConfirmDelete(true);
+                return;
+              }
+
+              void handleDelete();
+            }}
             type="button"
             variant="destructive"
           >
             <Trash2 size={16} />
-            Удалить
+            {confirmDelete ? "Удалить окончательно" : "Удалить"}
           </Button>
+          {confirmDelete ? (
+            <Button disabled={deleteTaskState.isLoading} onClick={() => setConfirmDelete(false)} type="button" variant="outline">
+              Отмена
+            </Button>
+          ) : null}
         </div>
       </div>
     </Modal>
@@ -882,6 +940,16 @@ function ProfileModal({ onClose, open, user }: { onClose: () => void; open: bool
   const initialStatusChoice = profileStatusOptions.some((option) => option.value === user.status) ? user.status : "custom";
   const [statusChoice, setStatusChoice] = useState(initialStatusChoice);
   const [customStatus, setCustomStatus] = useState(initialStatusChoice === "custom" ? user.status : "");
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const nextStatusChoice = profileStatusOptions.some((option) => option.value === user.status) ? user.status : "custom";
+    setStatusChoice(nextStatusChoice);
+    setCustomStatus(nextStatusChoice === "custom" ? user.status : "");
+  }, [open, user.status]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1017,6 +1085,9 @@ function CalendarModal({
   tasks: ContentTask[];
 }) {
   const [monthIso, setMonthIso] = useState(todayIso.slice(0, 7));
+  const [monthAnimationKey, setMonthAnimationKey] = useState(0);
+  const [focusedTaskId, setFocusedTaskId] = useState<number | null>(null);
+  const monthGridRef = useRef<HTMLDivElement>(null);
   const monthDays = useMemo(() => buildMonthDays(monthIso), [monthIso]);
   const monthLabel = new Intl.DateTimeFormat("ru-RU", {
     month: "long",
@@ -1026,10 +1097,34 @@ function CalendarModal({
     (task) => task.status !== "Готово" && (daysUntil(task.dueDate) <= 2 || isWeekend(task.startDate) || isWeekend(task.dueDate))
   );
 
+  useEffect(() => {
+    if (!focusedTaskId) {
+      return;
+    }
+
+    const focusedElement = monthGridRef.current?.querySelector(`[data-task-id="${focusedTaskId}"]`);
+    focusedElement?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+
+    const timer = window.setTimeout(() => setFocusedTaskId(null), 1800);
+
+    return () => window.clearTimeout(timer);
+  }, [focusedTaskId, monthDays]);
+
   function handleMonthShift(direction: -1 | 1) {
-    const date = new Date(`${monthIso}-01T00:00:00`);
-    date.setMonth(date.getMonth() + direction);
-    setMonthIso(date.toISOString().slice(0, 7));
+    setMonthAnimationKey((current) => current + 1);
+    setMonthIso((currentMonth) => addMonths(currentMonth, direction));
+  }
+
+  function focusTaskInCalendar(task: ContentTask) {
+    setMonthAnimationKey((current) => current + 1);
+    setMonthIso(task.startDate.slice(0, 7));
+    setFocusedTaskId(task.id);
+  }
+
+  function returnToCurrentMonth() {
+    setMonthAnimationKey((current) => current + 1);
+    setFocusedTaskId(null);
+    setMonthIso(todayIso.slice(0, 7));
   }
 
   return (
@@ -1058,7 +1153,7 @@ function CalendarModal({
                   key={task.id}
                   onClick={(event) => {
                     event.stopPropagation();
-                    onOpenTask(task);
+                    focusTaskInCalendar(task);
                   }}
                   type="button"
                 >
@@ -1077,7 +1172,14 @@ function CalendarModal({
             <Button onClick={() => handleMonthShift(-1)} type="button" variant="outline">
               Назад
             </Button>
-            <strong>{monthLabel}</strong>
+            <div className="calendar-month__title">
+              <strong>{monthLabel}</strong>
+              {monthIso !== todayIso.slice(0, 7) ? (
+                <Button onClick={returnToCurrentMonth} size="sm" type="button" variant="ghost">
+                  Текущий месяц
+                </Button>
+              ) : null}
+            </div>
             <Button onClick={() => handleMonthShift(1)} type="button" variant="outline">
               Вперед
             </Button>
@@ -1087,11 +1189,13 @@ function CalendarModal({
               <span key={day}>{day}</span>
             ))}
           </div>
-          <div className="calendar-month__grid">
+          <div className="calendar-month__grid" key={monthAnimationKey} ref={monthGridRef}>
             {monthDays.map((day) => {
               const dayTasks = tasks.filter((task) => task.startDate <= day && task.dueDate >= day);
               const outsideMonth = !day.startsWith(monthIso);
               const weekend = isWeekend(day);
+              const focusedTask = focusedTaskId ? tasks.find((task) => task.id === focusedTaskId) : undefined;
+              const focusedRange = focusedTask ? focusedTask.startDate <= day && focusedTask.dueDate >= day : false;
 
               return (
                 <div
@@ -1100,7 +1204,8 @@ function CalendarModal({
                     outsideMonth ? "calendar-day--muted" : "",
                     weekend ? "calendar-day--weekend" : "",
                     day === todayIso ? "calendar-day--today" : "",
-                    dayTasks.length === 0 ? "calendar-day--empty" : ""
+                    dayTasks.length === 0 ? "calendar-day--empty" : "",
+                    focusedRange ? "calendar-day--focused-range" : ""
                   ].filter(Boolean).join(" ")}
                   key={day}
                   onClick={() => {
@@ -1116,9 +1221,13 @@ function CalendarModal({
                   <div className="calendar-day__tasks">
                     {dayTasks.slice(0, 3).map((task) => (
                       <button
-                        className={`calendar-task calendar-task--${
-                          task.priority === "Высокий" ? "high" : task.priority === "Средний" ? "medium" : "low"
-                        }`}
+                        className={[
+                          "calendar-task",
+                          `calendar-task--${task.priority === "Высокий" ? "high" : task.priority === "Средний" ? "medium" : "low"}`,
+                          task.status === "Готово" ? "calendar-task--done" : "",
+                          task.id === focusedTaskId ? "calendar-task--focused" : ""
+                        ].filter(Boolean).join(" ")}
+                        data-task-id={task.id}
                         key={task.id}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -1144,6 +1253,7 @@ function CalendarModal({
 }
 
 export function PortalDashboardPage() {
+  const dispatch = useAppDispatch();
   const activeView = useAppSelector((state) => state.portal.activeView);
   const { data: session, isLoading: isSessionLoading } = useGetSessionQuery();
   const isAuthenticated = Boolean(session?.user);
@@ -1156,6 +1266,18 @@ export function PortalDashboardPage() {
   const [taskInitialDate, setTaskInitialDate] = useState(todayIso);
   const page = data?.pages[activeView];
   const currentUser = data?.currentUser ?? session?.user;
+
+  useEffect(() => {
+    if (!selectedTask || !data?.tasks) {
+      return;
+    }
+
+    const freshTask = data.tasks.find((task) => task.id === selectedTask.id);
+
+    if (freshTask && freshTask !== selectedTask) {
+      setSelectedTask(freshTask);
+    }
+  }, [data?.tasks, selectedTask]);
 
   function openTaskDetails(task: ContentTask) {
     setSelectedTask(task);
@@ -1203,6 +1325,47 @@ export function PortalDashboardPage() {
     openTaskCreate();
   }
 
+  function handleCardAction(index: number) {
+    if (activeView === "layout") {
+      if (index === 0) {
+        const nextTask = data?.tasks.find((task) => task.status !== "Готово") ?? data?.tasks[0];
+
+        if (nextTask) {
+          openTaskDetails(nextTask);
+        } else {
+          openTaskCreate();
+        }
+
+        return;
+      }
+
+      if (index === 1 || index === 2) {
+        setCalendarStackModal(null);
+        setModal("calendar");
+        return;
+      }
+
+      dispatch(setActiveView("profile"));
+      return;
+    }
+
+    if (activeView === "profile") {
+      if (index === 1) {
+        const nextTask = data?.tasks.find((task) => task.status !== "Готово") ?? data?.tasks[0];
+
+        if (nextTask) {
+          openTaskDetails(nextTask);
+          return;
+        }
+      }
+
+      setModal("profile");
+      return;
+    }
+
+    setModal("settings");
+  }
+
   return (
     <PortalLayout>
       <div className="mockup">
@@ -1210,7 +1373,14 @@ export function PortalDashboardPage() {
         {!isSessionLoading && isAuthenticated && isContentLoading ? <Loader label="Загрузка портала" /> : null}
         {!isSessionLoading && isAuthenticated && data && page && currentUser ? (
           <div className="mockup__view" key={activeView}>
-            <ProductPage onAction={handleAction} onOpenTask={openTaskDetails} page={page} tasks={data.tasks} user={currentUser} />
+            <ProductPage
+              onAction={handleAction}
+              onCardAction={handleCardAction}
+              onOpenTask={openTaskDetails}
+              page={page}
+              tasks={data.tasks}
+              user={currentUser}
+            />
           </div>
         ) : null}
       </div>

@@ -32,9 +32,7 @@ export function AuthPage({ mode }: AuthPageProps) {
   const isRegister = mode === "register";
   const form = useForm<LoginFormValues | RegisterFormValues>({
     resolver: zodResolver(isRegister ? registerSchema : loginSchema),
-    defaultValues: isRegister
-      ? { email: "", name: "", password: "" }
-      : { email: "alexey.morozov@emp.local", password: "password123" }
+    defaultValues: isRegister ? { email: "", name: "", password: "" } : { email: "", password: "" }
   });
   const rootError = form.formState.errors.root?.message;
   const isLoading = loginState.isLoading || registerState.isLoading;
@@ -74,19 +72,20 @@ export function AuthPage({ mode }: AuthPageProps) {
             <form className="auth-page__form" onSubmit={form.handleSubmit(handleSubmit)}>
               {isRegister ? (
                 <Field label="Имя">
-                  <Input autoComplete="name" {...form.register("name" as keyof RegisterFormValues)} />
+                  <Input autoComplete="name" disabled={isLoading} {...form.register("name" as keyof RegisterFormValues)} />
                   <FormError message={(form.formState.errors as Record<string, { message?: string }>).name?.message} />
                 </Field>
               ) : null}
 
               <Field label="Email">
-                <Input autoComplete="email" type="email" {...form.register("email")} />
+                <Input autoComplete="email" disabled={isLoading} type="email" {...form.register("email")} />
                 <FormError message={form.formState.errors.email?.message} />
               </Field>
 
               <Field label="Пароль">
                 <Input
                   autoComplete={isRegister ? "new-password" : "current-password"}
+                  disabled={isLoading}
                   type="password"
                   {...form.register("password")}
                 />
@@ -96,17 +95,13 @@ export function AuthPage({ mode }: AuthPageProps) {
               {rootError ? <p className="auth-page__error">{rootError}</p> : null}
 
               <Button disabled={isLoading} type="submit">
-                {isRegister ? "Зарегистрироваться" : "Войти"}
+                {isLoading ? "Отправка..." : isRegister ? "Зарегистрироваться" : "Войти"}
               </Button>
 
               <p className="auth-page__switch">
                 {isRegister ? "Уже есть учетная запись?" : "Еще нет учетной записи?"}{" "}
                 <Link href={isRegister ? "/login" : "/register"}>{isRegister ? "Войти" : "Зарегистрироваться"}</Link>
               </p>
-
-              {!isRegister ? (
-                <div className="auth-page__hint">Тестовый вход: alexey.morozov@emp.local / password123</div>
-              ) : null}
             </form>
           </CardContent>
         </Card>

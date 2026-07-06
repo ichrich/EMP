@@ -2,7 +2,7 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { Button } from "@/shared/ui/button";
 
 export function ThemeToggle() {
@@ -14,8 +14,12 @@ export function ThemeToggle() {
     setMounted(true);
   }, []);
 
-  function handleToggleTheme() {
+  function handleToggleTheme(event: MouseEvent<HTMLButtonElement>) {
     const root = document.documentElement;
+    const rect = event.currentTarget.getBoundingClientRect();
+
+    root.style.setProperty("--theme-x", `${rect.left + rect.width / 2}px`);
+    root.style.setProperty("--theme-y", `${rect.top + rect.height / 2}px`);
     root.classList.add("theme-transitioning");
     window.setTimeout(() => root.classList.remove("theme-transitioning"), 520);
     setTheme(isDark ? "light" : "dark");
